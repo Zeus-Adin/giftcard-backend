@@ -4,6 +4,7 @@ const { getDb, connectToDb } = require('./db')
 const { sendActivationEmail, registerUsersToken } = require('./functions/users')
 const { ObjectId } = require('mongodb')
 const { default: axios } = require('axios')
+const cors = require('cors');
 
 // init app & middleware
 const app = express()
