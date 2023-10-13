@@ -28,6 +28,7 @@ app.post('/api/register/user/data', (req, res) => {
   const { username, contact, email, pwd } = req.body
   console.log("look here: ", username, contact, email, pwd)
   console.log(req)
+  res.status().json({ datafromeRequest: req })
 
   // db.collection('users')
   //   .find({ $or: [{ username: user_data.username }, { contact: user_data.contact }, { email: user_data.email }] })
