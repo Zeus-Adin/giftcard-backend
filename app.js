@@ -8,6 +8,7 @@ const { default: axios } = require('axios')
 // init app & middleware
 const app = express()
 app.use(express.json())
+app.use(cors());
 
 // DB Connection
 let db
@@ -173,3 +174,17 @@ app.post('/api/user/forgot-pwd', (req, res) => {
 
 })
 // ----------------------------------------------------------------------------
+
+app.get('/api/user/info/:username', (req, res) => {
+  const { username } = req.params
+  db.collection('users')
+    .find({ username: username })
+    .toArray()
+    .then(result => {
+      res.status(200).json({ result: result })
+    })
+    .catch(err => {
+      res.status(500).json({ error: err })
+    })
+
+})
