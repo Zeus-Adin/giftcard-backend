@@ -7,7 +7,8 @@ const { default: axios } = require('axios')
 
 // init app & middleware
 const app = express()
-app.use(express.json())
+app.use(express.json({ limit: '1mb' }))
+app.use(express.static('public'))
 
 // DB Connection
 let db
@@ -26,6 +27,7 @@ app.post('/api/register/user/data', (req, res) => {
 
   const { username, contact, email, pwd } = req.body
   console.log("look here: ", username, contact, email, pwd)
+  console.log(req)
 
   // db.collection('users')
   //   .find({ $or: [{ username: user_data.username }, { contact: user_data.contact }, { email: user_data.email }] })
