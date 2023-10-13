@@ -27,6 +27,7 @@ connectToDb((err) => {
 app.post('/api/register/user/data', (req, res) => {
 
   const user_data = req.body
+  console.log("look here: ",user_data)
 
   db.collection('users')
     .find({ $or: [{ username: user_data.username }, { contact: user_data.contact }, { email: user_data.email }] })
