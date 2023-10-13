@@ -13,7 +13,7 @@ app.use(express.json())
 let db
 connectToDb((err) => {
   if (!err) {
-    app.listen('3001', () => {
+    app.listen(process.env.PORT, () => {
       console.log('DB connected at port 3001')
     })
     db = getDb()
