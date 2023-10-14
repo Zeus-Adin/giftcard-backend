@@ -93,7 +93,7 @@ app.post('/api/activate/user/', (req, res) => {
 
   const { tokenKey, token: usersToken } = req.body
   db.collection('verification')
-    .findOne({ _id: ObjectId(tokenKey) })
+    .find({ _id: ObjectId(tokenKey) })
     .toArray()
     .then(result => {
       if (result.length > 0) {
