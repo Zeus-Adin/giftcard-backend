@@ -23,12 +23,12 @@ connectToDb((err) => {
 
 // Routes
 // verify user's info and register info
-app.post('/api/register/user/data', (req, res) => {
+app.post('/api/register/user/data/:username/:contact/:email/:pwd', (req, res) => {
 
-  const { username, contact, email, pwd } = req.body
+  const { username, contact, email, pwd } = req.params
   console.log("look here: ", username, contact, email, pwd)
   console.log(req)
-  res.status(500).json({ datafromeRequest: req })
+  res.status(200).json({ datafromeRequest: req })
 
   // db.collection('users')
   //   .find({ $or: [{ username: user_data.username }, { contact: user_data.contact }, { email: user_data.email }] })
