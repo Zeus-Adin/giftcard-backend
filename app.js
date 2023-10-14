@@ -23,9 +23,9 @@ connectToDb((err) => {
 
 // Routes
 // verify user's info and register info
-app.post('/api/register/user/data/:username/:contact/:email/:pwd', (req, res) => {
+app.post('/api/register/user/data/', (req, res) => {
 
-  const { username, contact, email, pwd } = req.params
+  const { username, contact, email, pwd } = req.body
   console.log("look here: ", username, contact, email, pwd)
   console.log(req)
   res.status(200).json({ datafromeRequest: req })
