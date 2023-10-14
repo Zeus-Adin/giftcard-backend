@@ -53,6 +53,11 @@ app.post('/api/register/user/data/', (req, res) => {
                   res.status(200).json({
                     reg_stat: acknowledged, reg_hash: reg_ID,
                     act_key: insertedId, message: "Registration successful!",
+                    reg_payload: {
+                      username: false,
+                      contact: false,
+                      email: false
+                    }
                   })
                 })
             } else {
