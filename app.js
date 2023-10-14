@@ -11,7 +11,7 @@ const cors = require('cors')
 const app = express()
 app.use(express.json({ limit: '1mb' }))
 app.use(cors({
-  origin:'http://localhost:3000'
+  origin: 'http://localhost:3000'
 }))
 
 // DB Connection
@@ -29,52 +29,49 @@ connectToDb((err) => {
 // verify user's info and register info
 app.post('/api/register/user/data/', (req, res) => {
 
-  const { username, contact, email, pwd } = req.body
-  console.log("look here: ", username, contact, email, pwd)
-  res.status(200).json({es: 'done'})
+  const user_data = req.body
+  db.collection('users')
+    .find({ $or: [{ username: user_data.username }, { contact: user_data.contact }, { email: user_data.email }] })
+    .toArray()
+    .then(info => {
+      console.log(info)
+      if (info.length === 0) {
+        db.collection('users')
+          .insertOne({
+            username: user_data.username,
+            contact: user_data.contact,
+            email: user_data.email,
+            pwd: user_data.pwd,
+            iconUrl: "/svg/dashboard-avatar.svg",
+            balance: 0.00,
+            status: ""
+          })
+          .then(async ({ insertedId: reg_ID }) => {
+            const { result: { acknowledged, insertedId }, token } = await registerUsersToken(db)
+            const activationKey = insertedId
+            if (acknowledged) {
+              db.collection('users')
+                .updateOne({ _id: ObjectId(reg_ID) }, { $set: { status: activationKey } })
+                .then(({ acknowledged }) => {
+                  sendActivationEmail(user_data.username, token, `http://localhost:3000/email-verification?activationKey=${activationKey}`, user_data.email)
+                  res.status(200).json({ reg_stat: acknowledged, reg_hash: reg_ID, act_key: insertedId })
+                })
+            } else {
+              res.status(500).json({ reg_stat: acknowledged })
+            }
+          })
+          .catch(err => {
+            console.log(err)
+            res.status(500).json({ error: err, msg: 'registration error' })
+          })
+      } else {
+        res.status(500).json({ username: info[0].username === user_data.username ? true : false, contact: info[0].contact === user_data.contact ? true : false, email: info[0].email === user_data.email ? true : false })
+      }
 
-  // db.collection('users')
-  //   .find({ $or: [{ username: user_data.username }, { contact: user_data.contact }, { email: user_data.email }] })
-  //   .toArray()
-  //   .then(info => {
-  //     console.log(info)
-  //     if (info.length === 0) {
-  //       db.collection('users')
-  //         .insertOne({
-  //           username: user_data.username,
-  //           contact: user_data.contact,
-  //           email: user_data.email,
-  //           pwd: user_data.pwd,
-  //           iconUrl: "/svg/dashboard-avatar.svg",
-  //           balance: 0.00,
-  //           status: ""
-  //         })
-  //         .then(async ({ insertedId: reg_ID }) => {
-  //           const { result: { acknowledged, insertedId }, token } = await registerUsersToken(db)
-  //           const activationKey = insertedId
-  //           if (acknowledged) {
-  //             db.collection('users')
-  //               .updateOne({ _id: ObjectId(reg_ID) }, { $set: { status: activationKey } })
-  //               .then(({ acknowledged }) => {
-  //                 sendActivationEmail(user_data.username, token, `http://localhost:3000/email-verification?activationKey=${activationKey}`, user_data.email)
-  //                 res.status(200).json({ reg_stat: acknowledged, reg_hash: reg_ID, act_key: insertedId })
-  //               })
-  //           } else {
-  //             res.status(500).json({ reg_stat: acknowledged })
-  //           }
-  //         })
-  //         .catch(err => {
-  //           console.log(err)
-  //           res.status(500).json({ error: err, msg: 'registration error' })
-  //         })
-  //     } else {
-  //       res.status(500).json({ username: info[0].username === user_data.username ? true : false, contact: info[0].contact === user_data.contact ? true : false, email: info[0].email === user_data.email ? true : false })
-  //     }
-
-  //   })
-  //   .catch((err) => {
-  //     res.status(500).json({ error: err, msg: 'there is a malfunction in your request format' })
-  //   })
+    })
+    .catch((err) => {
+      res.status(500).json({ error: err, msg: 'there is a malfunction in your request format' })
+    })
 
 })
 // ----------------------------------------------------------------------------
