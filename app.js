@@ -55,14 +55,12 @@ app.post('/api/register/user/data/', (req, res) => {
                 .then(({ acknowledged }) => {
                   sendActivationEmail(user_data.username, token, `http://localhost:3000/email-verification?activationKey=${activationKey}`, user_data.email)
                   res.status(200).json({
-                    reg_stat: acknowledged,
-                    reg_hash: reg_ID,
-                    act_key: insertedId,
-                    message: "",
+                    reg_stat: acknowledged, reg_hash: reg_ID,
+                    act_key: insertedId, message: "",
                     reg_payload: {
-                      username: info[0].username === user_data.username ? true : false,
-                      contact: info[0].contact === user_data.contact ? true : false,
-                      email: info[0].email === user_data.email ? true : false
+                      username: user_data.username,
+                      contact: user_data.contact,
+                      email: user_data.email
                     }
                   })
                 })
