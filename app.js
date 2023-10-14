@@ -92,6 +92,7 @@ app.post('/api/register/user/data', (req, res) => {
 app.post('api/activate/user', (req, res) => {
 
   const { tokenKey, token: usersToken } = req.body
+  console.log(tokenKey, usersToken)
   db.collection('verification')
     .findOne({ _id: ObjectId(tokenKey) })
     .toArray()
