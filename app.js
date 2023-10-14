@@ -27,7 +27,7 @@ connectToDb((err) => {
 
 // Routes
 // verify user's info and register info
-app.post('/api/register/user/data', (req, res) => {
+app.post('/api/register/user/data/', (req, res) => {
 
   const user_data = req.body
   db.collection('users')
@@ -89,7 +89,7 @@ app.post('/api/register/user/data', (req, res) => {
 // ----------------------------------------------------------------------------
 
 // activate user
-app.post('api/activate/user', (req, res) => {
+app.post('api/activate/user/', (req, res) => {
 
   const { tokenKey, token: usersToken } = req.body
   console.log(tokenKey, usersToken)
