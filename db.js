@@ -7,7 +7,7 @@ module.exports = {
   connectToDb: (cb) => {
     MongoClient.connect(process.env.DB_CONNECTION_URL)
       .then(client => {
-        dbConnection = client.db()
+        dbConnection = client.db('gift-shop')
         return cb()
       })
       .catch(err => {

@@ -21,7 +21,7 @@ connectToDb((err) => {
     app.listen(process.env.PORT, () => {
       console.log('DB connected at port 3001')
     })
-    db = getDb('gift-shop')
+    db = getDb()
   }
 })
 
