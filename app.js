@@ -37,12 +37,9 @@ app.post('/api/register/user/data/', (req, res) => {
       if (info.length === 0) {
         db.collection('users')
           .insertOne({
-            username: user_data.username,
-            contact: user_data.contact,
-            email: user_data.email,
-            pwd: user_data.pwd,
-            iconUrl: "/svg/dashboard-avatar.svg",
-            balance: 0.00,
+            username: user_data.username, contact: user_data.contact,
+            email: user_data.email, pwd: user_data.pwd,
+            iconUrl: "/svg/dashboard-avatar.svg", balance: 0.00,
             status: ""
           })
           .then(async ({ insertedId: reg_ID }) => {
@@ -55,12 +52,7 @@ app.post('/api/register/user/data/', (req, res) => {
                   sendActivationEmail(user_data.username, token, `http://localhost:3000/email-verification?activationKey=${activationKey}`, user_data.email)
                   res.status(200).json({
                     reg_stat: acknowledged, reg_hash: reg_ID,
-                    act_key: insertedId, message: "",
-                    reg_payload: {
-                      username: user_data.username,
-                      contact: user_data.contact,
-                      email: user_data.email
-                    }
+                    act_key: insertedId, message: "Registration successful!",
                   })
                 })
             } else {
@@ -69,23 +61,22 @@ app.post('/api/register/user/data/', (req, res) => {
           })
           .catch(err => {
             console.log(err)
-            res.status(500).json({ error: err, msg: 'registration error' })
+            res.status(500).json({ reg_stat: false, error: err, message: 'Token generation server side error!' })
           })
+      } else {
+        res.status(500).json({
+          reg_stat: acknowledged, reg_hash: "",
+          act_key: "", message: "Registration failed!",
+          reg_payload: {
+            username: info[0].username === user_data.username ? true : false,
+            contact: info[0].contact === user_data.contact ? true : false,
+            email: info[0].email === user_data.email ? true : false
+          }
+        })
       }
     })
     .catch((err) => {
-      console.log(err)
-      res.status(500).json({
-        reg_stat: acknowledged,
-        reg_hash: "",
-        act_key: "",
-        message: "user",
-        reg_payload: {
-          username: info[0].username === user_data.username ? true : false,
-          contact: info[0].contact === user_data.contact ? true : false,
-          email: info[0].email === user_data.email ? true : false
-        }
-      })
+      res.status(500).json({ reg_stat: false, error: err, message: 'User registeration erver side error!' })
     })
 
 })
