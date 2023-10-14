@@ -64,6 +64,7 @@ app.post('/api/register/user/data/', (req, res) => {
             res.status(500).json({ reg_stat: false, error: err, message: 'Token generation server side error!' })
           })
       } else {
+        console.log("Expected Error: ", info)
         res.status(500).json({
           reg_stat: acknowledged, reg_hash: "",
           act_key: "", message: "Registration failed!",
@@ -76,7 +77,7 @@ app.post('/api/register/user/data/', (req, res) => {
       }
     })
     .catch((err) => {
-      res.status(500).json({ reg_stat: false, error: err, message: 'User registeration erver side error!' })
+      res.status(500).json({ reg_stat: false, error: err, message: 'User registeration server side error!' })
     })
 
 })
