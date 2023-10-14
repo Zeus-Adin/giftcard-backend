@@ -34,7 +34,6 @@ app.post('/api/register/user/data/', (req, res) => {
     .find({ $or: [{ username: user_data.username }, { contact: user_data.contact }, { email: user_data.email }] })
     .toArray()
     .then(info => {
-      console.log(info)
       if (info.length === 0) {
         db.collection('users')
           .insertOne({
@@ -72,23 +71,21 @@ app.post('/api/register/user/data/', (req, res) => {
             console.log(err)
             res.status(500).json({ error: err, msg: 'registration error' })
           })
-      } else {
-        res.status(500).json({
-          reg_stat: acknowledged,
-          reg_hash: "",
-          act_key: "",
-          message: "",
-          reg_payload: {
-            username: info[0].username === user_data.username ? true : false,
-            contact: info[0].contact === user_data.contact ? true : false,
-            email: info[0].email === user_data.email ? true : false
-          }
-        })
       }
-
     })
     .catch((err) => {
-      res.status(500).json({ error: err, msg: 'there is a malfunction in your request format' })
+      console.log(err)
+      res.status(500).json({
+        reg_stat: acknowledged,
+        reg_hash: "",
+        act_key: "",
+        message: "user",
+        reg_payload: {
+          username: info[0].username === user_data.username ? true : false,
+          contact: info[0].contact === user_data.contact ? true : false,
+          email: info[0].email === user_data.email ? true : false
+        }
+      })
     })
 
 })
