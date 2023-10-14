@@ -27,7 +27,7 @@ connectToDb((err) => {
 
 // Routes
 // verify user's info and register info
-app.post('/api/register/user/data/', (req, res) => {
+app.post('/api/register/user/data', (req, res) => {
 
   const user_data = req.body
   db.collection('users')
@@ -88,6 +88,46 @@ app.post('/api/register/user/data/', (req, res) => {
 })
 // ----------------------------------------------------------------------------
 
+// activate user
+app.post('api/activate/user', (req, res) => {
+
+  const { tokenKey, token: usersToken } = req.body
+  db.collection('verification')
+    .findOne({ _id: ObjectId(tokenKey) })
+    .toArray()
+    .then(result => {
+      if (result.length > 0) {
+        const { token } = result[0]
+        if (usersToken = token) {
+          db.collection('verification')
+            .deleteOne({ _id: ObjectId(tokenKey) })
+            .then(({ acknowledged }) => {
+              if (acknowledged) {
+                db.collection('users')
+                  .updateOne({ _id: ObjectId(usersToken) }, { $set: { status: "active" } })
+                  .then(({ acknowledged }) => {
+                    if (acknowledged) {
+                      res.status(200).json({ verify_stat: acknowledged, message: 'Account activation successful!' })
+                    } else {
+                      res.status(500).json({ verify_stat: acknowledged, message: "Unknown error occured!" })
+                    }
+                  }).catch(error => { res.status(500).json({ verify_stat: acknowledged, message: "Server side error!", error: error }) })
+              } else {
+                res.status(500).json({ verify_stat: acknowledged, message: 'Unknown error occured!' })
+              }
+            })
+            .catch(error => {
+              res.status(500).json({ verify_stat: false, message: 'Server side error!', error: error })
+            })
+        }
+      } else {
+        res.status(500).json({ verify_stat: false, message: 'Activation key expired!' })
+      }
+    })
+
+})
+// ----------------------------------------------------------------------------
+
 // resend activation token
 app.post('/api/resend/token', (req, res) => {
 
@@ -112,45 +152,6 @@ app.post('/api/resend/token', (req, res) => {
           })
       } else {
         res.status(500).json({ reg_stat: false })
-      }
-    })
-})
-// ----------------------------------------------------------------------------
-
-// activate user
-app.post('api/activate/user', (req, res) => {
-
-  const { activationKey, token: usersToken } = req.body
-  db.collection('verification')
-    .findOne({ _id: ObjectId(activationKey) })
-    .toArray()
-    .then(result => {
-      if (result.length > 0) {
-        const { token } = result[0]
-        if (usersToken = token) {
-          db.collection('verification')
-            .deleteOne({ _id: ObjectId(activationKey) })
-            .then(result => {
-              if (result.acknowledged) {
-                db.collection('users')
-                  .updateOne({ _id: ObjectId(usersToken) }, { $set: { status: "active" } })
-                  .then(result => {
-                    if (result.acknowledged) {
-                      res.status(200).json({ activation: true, msg: 'Account activated' })
-                    } else {
-                      res.status(500).json({ activation: true, msg: 'an error ocured while activating account' })
-                    }
-                  })
-              } else {
-                res.status(500).json({ activation: true, msg: 'an error ocured while activating account' })
-              }
-            })
-            .catch(err => {
-              res.status(500).json({ error: err, msg: 'an error ocured while activating account' })
-            })
-        }
-      } else {
-        res.status(500).json({ activation: false })
       }
     })
 })
