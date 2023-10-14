@@ -76,9 +76,9 @@ app.post('/api/register/user/data/', (req, res) => {
         })
       }
     })
-    .catch((err) => {
-      console.log(err)
-      res.status(500).json({ reg_stat: false, error: err, message: 'User registeration server side error!' })
+    .catch((error) => {
+      console.log(error)
+      res.status(500).json({ reg_stat: false, error: error, message: 'User registeration server side error!' })
     })
 
 })
