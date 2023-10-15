@@ -97,30 +97,30 @@ app.post('/api/activate/user/', (req, res) => {
     .toArray()
     .then(result => {
       if (result.length > 0) {
-        console.log(result)
+        console.log("Look Here", result)
         const { token } = result[0]
-        if (usersToken = token) {
-          db.collection('verification')
-            .deleteOne({ _id: ObjectId(tokenKey) })
-            .then(({ acknowledged }) => {
-              if (acknowledged) {
-                db.collection('users')
-                  .updateOne({ _id: ObjectId(usersToken) }, { $set: { status: "active" } })
-                  .then(({ acknowledged }) => {
-                    if (acknowledged) {
-                      res.status(200).json({ verify_stat: acknowledged, message: 'Account activation successful!' })
-                    } else {
-                      res.status(500).json({ verify_stat: acknowledged, message: "Unknown error occured!" })
-                    }
-                  }).catch(error => { res.status(500).json({ verify_stat: acknowledged, message: "Server side error!", error: error }) })
-              } else {
-                res.status(500).json({ verify_stat: acknowledged, message: 'Unknown error occured!' })
-              }
-            })
-            .catch(error => {
-              res.status(500).json({ verify_stat: false, message: 'Server side error!', error: error })
-            })
-        }
+        // if (usersToken = token) {
+        //   db.collection('verification')
+        //     .deleteOne({ _id: ObjectId(tokenKey) })
+        //     .then(({ acknowledged }) => {
+        //       if (acknowledged) {
+        //         db.collection('users')
+        //           .updateOne({ _id: ObjectId(usersToken) }, { $set: { status: "active" } })
+        //           .then(({ acknowledged }) => {
+        //             if (acknowledged) {
+        //               res.status(200).json({ verify_stat: acknowledged, message: 'Account activation successful!' })
+        //             } else {
+        //               res.status(500).json({ verify_stat: acknowledged, message: "Unknown error occured!" })
+        //             }
+        //           }).catch(error => { res.status(500).json({ verify_stat: acknowledged, message: "Server side error!", error: error }) })
+        //       } else {
+        //         res.status(500).json({ verify_stat: acknowledged, message: 'Unknown error occured!' })
+        //       }
+        //     })
+        //     .catch(error => {
+        //       res.status(500).json({ verify_stat: false, message: 'Server side error!', error: error })
+        //     })
+        // }
       } else {
         res.status(500).json({ verify_stat: false, message: 'Activation key expired!' })
       }
