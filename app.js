@@ -97,6 +97,7 @@ app.post('/api/activate/user/', (req, res) => {
     .toArray()
     .then(result => {
       if (result.length > 0) {
+        console.log(result)
         const { token } = result[0]
         if (usersToken = token) {
           db.collection('verification')
