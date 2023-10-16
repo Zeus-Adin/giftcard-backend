@@ -47,7 +47,7 @@ app.post('/api/register/user/data/', (req, res) => {
             const activationKey = insertedId
             if (acknowledged) {
               db.collection('users')
-                .updateOne({ _id: ObjectId(reg_ID) }, { $set: { status: activationKey } })
+                .updateOne({ _id: ObjectId(reg_ID) }, { $set: { status: activationKey.toString() } })
                 .then(({ acknowledged }) => {
                   sendActivationEmail(user_data.username, token, `http://localhost:3000/email-verification?activationKey=${activationKey}`, user_data.email)
                   res.status(200).json({
@@ -98,14 +98,14 @@ app.post('/api/activate/user/', (req, res) => {
     .then(result => {
       if (result.length > 0) {
         const { token, _id: userId } = result[0]
-        console.log(token, userId.toString(), userId)
+        console.log(token, userId)
         if (usersToken === token) {
           db.collection('verification')
             .deleteOne({ _id: ObjectId(tokenKey) })
             .then(({ acknowledged }) => {
               if (acknowledged) {
                 db.collection('users')
-                  .updateOne({ _id: ObjectId(userId.toString()) }, { $set: { status: "active" } })
+                  .updateOne({ _id: ObjectId(userId) }, { $set: { status: "active" } })
                   .then(({ acknowledged }) => {
                     if (acknowledged) {
                       res.status(200).json({ verify_stat: acknowledged, message: 'Account activation successful!' })
