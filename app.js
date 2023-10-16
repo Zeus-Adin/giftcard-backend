@@ -98,7 +98,7 @@ app.post('/api/activate/user/', (req, res) => {
     .then(result => {
       if (result.length > 0) {
         const { token } = result[0]
-        if (usersToken = token) {
+        if (usersToken === token) {
           db.collection('verification')
             .deleteOne({ _id: ObjectId(tokenKey) })
             .then(({ acknowledged }) => {
