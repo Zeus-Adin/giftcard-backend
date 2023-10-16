@@ -98,14 +98,14 @@ app.post('/api/activate/user/', (req, res) => {
     .then(result => {
       if (result.length > 0) {
         const { token, _id: userId } = result[0]
-        console.log(token, userId)
+        console.log(token, ObjectId(userId).toString())
         if (usersToken === token) {
           db.collection('verification')
             .deleteOne({ _id: ObjectId(tokenKey) })
             .then(({ acknowledged }) => {
               if (acknowledged) {
                 db.collection('users')
-                  .updateOne({ _id: userId }, { $set: { status: "active" } })
+                  .updateOne({ _id: ObjectId(userId).toString() }, { $set: { status: "active" } })
                   .then(({ acknowledged }) => {
                     if (acknowledged) {
                       res.status(200).json({ verify_stat: acknowledged, message: 'Account activation successful!' })
