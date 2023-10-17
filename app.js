@@ -136,7 +136,7 @@ app.post('/api/resend/token/', (req, res) => {
         }
 
         await db.collection('users').updateOne({ _id: ObjectId(users_reg_id) }, { $set: { activationKey: insertedId } });
-        sendActivationEmail(username, token, `${process.env.APP_ORIGIN}/email-verification?actKey=${activationKey}&&email=${email}`, email);
+        sendActivationEmail(username, token, `${process.env.APP_ORIGIN}/email-verification?actKey=${insertedId}&&email=${email}`, email);
         return res.status(200).json({ resend_stat: true, message: 'Verification code sent' });
       }
 
