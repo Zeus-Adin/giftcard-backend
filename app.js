@@ -104,7 +104,7 @@ app.post('/api/activate/user/', (req, res) => {
             .then(({ acknowledged }) => {
               if (acknowledged) {
                 db.collection('users')
-                  .updateOne({ _id: ObjectId(userId.toString()) }, { $set: { status: "active" } })
+                  .update({ _id: ObjectId(userId.toString()) }, { $set: { status: "active" } })
                   .then(({ acknowledged }) => {
                     if (acknowledged) {
                       res.status(200).json({ verify_stat: acknowledged, message: 'Account activation successful!' })
