@@ -102,7 +102,10 @@ app.post('/api/activate/user/:id', (req, res) => {
       const { token, reg_id } = result[0]
       if (token === usersToken) {
         const { acknowledged } = await db.collection('users').updateOne({ _id: ObjectId(reg_id) }, { $set: { activation: true, activationKey: '' } })
-        if (acknowledged) res.status(200).json({ verify_stat: true, message: 'Account activation successful!' })
+        if (acknowledged) {
+          db.collection('verification').deleteOne({ _id: ObjectId(req.params.id) })
+          res.status(200).json({ verify_stat: true, message: 'Account activation successful!' })
+        }
         if (!acknowledged) res.status(500).json({ verify_stat: false, message: 'Unknown error occured!' })
       } else {
         res.status(500).json({ verify_stat: false, message: 'Invalid token provided!' })
