@@ -3,16 +3,17 @@ const crypto = require('crypto')
 const { ConfirmationEmail } = require('../emailTemplates/confirmationEmail')
 
 module.exports = {
-    registerUsersToken: async (db) => {
+    registerUsersToken: async (db, usersRegId) => {
         const randomNum = Math.floor(Math.random() * 1000000);
-        const cryptoGraphicToken = randomNum.toString().padStart(6, '0');       
+        const cryptoGraphicToken = randomNum.toString().padStart(6, '0');
         const timestamp = new Date()
         const token = {
             token: cryptoGraphicToken,
+            reg_id: usersRegId,
             createdAt: timestamp,
         }
         const result = await db.collection('verification').insertOne(token)
-        return { result: result, token: cryptoGraphicToken }
+        return { result: result, token: cryptoGraphicToken, stamp: timestamp }
     },
     sendActivationEmail: async (username, token, activationurl, to) => {
         const emailBody = ConfirmationEmail(username, token, activationurl, to)
