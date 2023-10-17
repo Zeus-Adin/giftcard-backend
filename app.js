@@ -50,7 +50,7 @@ app.post('/api/register/user/data/', (req, res) => {
               db.collection('users')
                 .updateOne({ _id: ObjectId(reg_ID) }, { $set: { activationKey: activationKey.toString() } })
                 .then(({ acknowledged }) => {
-                  sendActivationEmail(user_data.username, token, `http://localhost:3000/email-verification?activationKey=${activationKey}`, user_data.email)
+                  sendActivationEmail(user_data.username, token, `http://localhost:3000/email-verification?activationKey=${activationKey}&&email=${user_data.email}`, user_data.email)
                   res.status(200).json({
                     reg_stat: acknowledged, reg_hash: reg_ID,
                     act_key: insertedId, message: "Registration successful!",
@@ -122,35 +122,35 @@ app.post('/api/resend/token/', (req, res) => {
     .toArray()
     .then(async userInfo => {
       if (!userInfo) {
-        return res.status(404).json({ message: 'User not found' });
+        return res.status(404).json({ resend_stat: false, message: "User not found!" });
       }
 
       const { _id: users_reg_id, activation, activationKey, email, username } = userInfo[0];
       const verificationInfo = await db.collection('verification').findOne({ _id: activationKey });
 
       if (!verificationInfo) {
-        const { result: { acknowledged, insertedId }, token, stamp } = await registerUsersToken(db);
+        const { result: { acknowledged, insertedId }, token } = await registerUsersToken(db);
 
         if (!acknowledged) {
-          return res.status(500).json({ message: 'Unknown error occurred' });
+          return res.status(500).json({ resend_stat: false, message: 'Unknown error occurred' });
         }
 
         await db.collection('users').updateOne({ _id: ObjectId(users_reg_id) }, { $set: { activationKey: insertedId } });
-        sendActivationEmail(username, token, `http://localhost:3000/activate/user/${activationKey}`, email);
-        return res.status(200).json({ message: 'Token has been resent', delivered: true, activationStat: activation, stamp: stamp });
+        sendActivationEmail(username, token, `http://localhost:3000/activate/user/${activationKey}&&email=${email}`, email);
+        return res.status(200).json({ resend_stat: true, message: 'Verification code sent' });
       }
 
-      const { token, createdAt } = verificationInfo;
+      const { token } = verificationInfo;
 
       if (activation) {
-        return res.status(500).json({ message: 'Account has been activated already', delivered: false, activationStat: activation, stamp: '' });
+        return res.status(500).json({ resend_stat: false, message: 'Account has been activated already' });
       }
 
-      sendActivationEmail(username, token, `http://localhost:3000/activate/user/${activationKey}`, email);
-      return res.status(200).json({ message: 'Verification code sent', delivered: true, activationStat: activation, stamp: createdAt });
+      sendActivationEmail(username, token, `http://localhost:3000/activate/user/${activationKey}&&email=${email}`, email);
+      return res.status(200).json({ resend_stat: true, message: 'Verification code sent' });
     })
     .catch(error => {
-      res.status(500).json({ message: 'Server side error', error });
+      res.status(500).json({ resend_stat: false, message: 'Server side error', error: error });
     })
 });
 
