@@ -129,7 +129,7 @@ app.post('/api/resend/token/', (req, res) => {
       const verificationInfo = await db.collection('verification').findOne({ _id: activationKey });
 
       if (!verificationInfo) {
-        const { result: { acknowledged, insertedId }, token } = await registerUsersToken(db);
+        const { result: { acknowledged, insertedId }, token } = await registerUsersToken(db, users_reg_id);
 
         if (!acknowledged) {
           return res.status(500).json({ resend_stat: false, message: 'Unknown error occurred' });
