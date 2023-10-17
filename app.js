@@ -50,7 +50,7 @@ app.post('/api/register/user/data/', (req, res) => {
               db.collection('users')
                 .updateOne({ _id: ObjectId(reg_ID) }, { $set: { activationKey: activationKey.toString() } })
                 .then(({ acknowledged }) => {
-                  sendActivationEmail(user_data.username, token, `http://localhost:3000/email-verification?activationKey=${activationKey}&&email=${user_data.email}`, user_data.email)
+                  sendActivationEmail(user_data.username, token, `${process.env.APP_ORIGIN}/email-verification?actKey=${activationKey}&&email=${user_data.email}`, user_data.email)
                   res.status(200).json({
                     reg_stat: acknowledged, reg_hash: reg_ID,
                     act_key: insertedId, message: "Registration successful!",
@@ -136,7 +136,7 @@ app.post('/api/resend/token/', (req, res) => {
         }
 
         await db.collection('users').updateOne({ _id: ObjectId(users_reg_id) }, { $set: { activationKey: insertedId } });
-        sendActivationEmail(username, token, `http://localhost:3000/activate/user/${activationKey}&&email=${email}`, email);
+        sendActivationEmail(username, token, `${process.env.APP_ORIGIN}/email-verification?actKey=${activationKey}&&email=${email}`, email);
         return res.status(200).json({ resend_stat: true, message: 'Verification code sent' });
       }
 
@@ -146,7 +146,7 @@ app.post('/api/resend/token/', (req, res) => {
         return res.status(500).json({ resend_stat: false, message: 'Account has been activated already' });
       }
 
-      sendActivationEmail(username, token, `http://localhost:3000/activate/user/${activationKey}&&email=${email}`, email);
+      sendActivationEmail(username, token, `${process.env.APP_ORIGIN}/email-verification?actKey=${activationKey}&&email=${email}`, email);
       return res.status(200).json({ resend_stat: true, message: 'Verification code sent' });
     })
     .catch(error => {
