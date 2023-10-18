@@ -166,10 +166,10 @@ app.post('/api/user/login', (req, res) => {
       if (result.length > 0) {
         res.status(200).json({ authstate: true, result: result, message: 'Login successfull' })
       } else {
-        res.status(500).json({ authstate: false, message: 'Incorrect user or password.' })
+        res.status(500).json({ authstate: false, result: result, message: 'Incorrect user or password.' })
       }
     }).catch(error => {
-      res.status(500).json({ authstate: false, message: 'Unknown error occured', error: error })
+      res.status(500).json({ authstate: false, result: [], message: 'Unknown error occured', error: error })
     })
 })
 // ----------------------------------------------------------------------------
