@@ -158,18 +158,18 @@ app.post('/api/resend/token/', (req, res) => {
 
 // user's login
 app.post('/api/user/login', (req, res) => {
-  const { username, email, pwd } = req.body
+  const { email, pwd } = req.body
   db.collection('users')
-    .findOne({ $or: [{ $and: { username: username, pwd: pwd } }, { $and: { email: email, pwd: pwd } }] })
+    .findOne({ $and: { email: email, pwd: pwd } })
     .toArray()
     .then(result => {
       if (result.length > 0) {
-        res.status(200).json({ authstate: true, result: result, msg: 'Login successfull' })
+        res.status(200).json({ authstate: true, result: result, message: 'Login successfull' })
       } else {
-        res.status(500).json({ authstate: false, msg: 'Incorrect user or password.' })
+        res.status(500).json({ authstate: false, message: 'Incorrect user or password.' })
       }
-    }).catch(err => {
-      res.status(500).json({ authstate: false, msg: 'Unknown error occured' })
+    }).catch(error => {
+      res.status(500).json({ authstate: false, message: 'Unknown error occured', error: error })
     })
 })
 // ----------------------------------------------------------------------------
