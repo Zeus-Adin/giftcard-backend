@@ -161,7 +161,7 @@ app.post('/api/user/login', (req, res) => {
   const { email, pwd } = req.body
   console.log(email, pwd)
   db.collection('users')
-    .findOne({ email: email, pwd: pwd })
+    .find({ email: email, pwd: pwd })
     .toArray()
     .then(result => {
       if (result.length > 0) {
