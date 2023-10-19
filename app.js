@@ -159,6 +159,7 @@ app.post('/api/resend/token/', (req, res) => {
 // user's login
 app.post('/api/user/login', (req, res) => {
   const { email, pwd } = req.body
+  console.log(email, pwd)
   db.collection('users')
     .findOne({ $and: { email: email, pwd: pwd } })
     .toArray()
