@@ -11,7 +11,7 @@ const cors = require('cors')
 const app = express()
 app.use(express.json({ limit: '1mb' }))
 app.use(cors({
-  origin: process.env.APP_ORIGIN
+  origin: [process.env.APP_ORIGIN, "https://giftcardshop247.netlify.app"]
 }))
 
 // DB Connection
