@@ -210,6 +210,7 @@ app.get('/api/user/info/:username', (req, res) => {
 // Register card tx
 app.post('/api/register/giftcard/tx', (req, res) => {
   const { user, amount, fileCount, files, rate, status } = req.body;
+  console.log(user, amount, fileCount, files, rate, status)
   console.log(req.body)
 })
 // -----------------------------------------------------------------------------
