@@ -9,7 +9,7 @@ const cors = require('cors')
 
 // init app & middleware
 const app = express()
-app.use(express.json({ limit: '1mb' }))
+app.use(express.json({ limit: '25mb' }))
 app.use(cors({
   origin: [process.env.APP_ORIGIN, "https://giftcardshop247.netlify.app"]
 }))
