@@ -185,12 +185,13 @@ app.post('/api/user/pwd-reset', (req, res) => {
 
 // forgot password
 app.post('/api/user/forgot-pwd', (req, res) => {
-  const { username, email } = req.body
+  const { email } = req.body
 
 
 })
 // ----------------------------------------------------------------------------
 
+// Get user info
 app.get('/api/user/info/:username', (req, res) => {
   const { username } = req.params
   db.collection('users')
@@ -204,3 +205,12 @@ app.get('/api/user/info/:username', (req, res) => {
     })
 
 })
+// ----------------------------------------------------------------------------
+
+// Register card tx
+app.post('/api/register/giftcard/tx', (req, res) => {
+  const { user, amount, fileCount, files, rate, status } = req.body;
+  console.log(req.body)
+})
+// -----------------------------------------------------------------------------
+
