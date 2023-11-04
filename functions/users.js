@@ -49,8 +49,8 @@ module.exports = {
     getCard: async (cid) => {
         const res = await storageClient.get(cid)
         const files = await res.files()
+        console.log(files)
         if (files > 0) {
-            console.log(files)
             return JSON.parse(files[0].content)
         } else {
             return 'none'
