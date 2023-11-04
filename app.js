@@ -228,9 +228,19 @@ app.get('/api/get/giftcard/:username/:id', async (req, res) => {
   let results = [];
   for (let i = 0; i < cardTx.length; i++) {
     const { success, message, error, result } = await getCard(cardTx[i].files)
-    results.push({ success, message, error, result })
+    results.push({ success, message, error, url: result, tx: cardTx[i] })
   }
-  res.status(200).json({results})
+  res.status(200).json({ results })
+})
+// -----------------------------------------------------------------------------
+
+// Get card
+app.get('/api/get/giftcard/:cid', async (req, res) => {
+  const { cid } = req.params
+  const cardTx = await db.collection('cards').find({ files: cid }).toArray()
+  if (!cardTx) res.status(500).json({ success: false, message: 'Cardtx not found', result: cardTx })
+  const { success, message, error, result } = await getCard(cid)
+  res.status(200).json({ success, message, error, url: result, tx: cardTx[0] })
 })
 // -----------------------------------------------------------------------------
 
