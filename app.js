@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express')
 const { getDb, connectToDb } = require('./db')
-const { sendActivationEmail, registerUsersToken, storeCard } = require('./functions/users')
+const { sendActivationEmail, registerUsersToken, storeCard, getCard } = require('./functions/users')
 const { ObjectId } = require('mongodb')
 const { default: axios } = require('axios')
 const cors = require('cors')
@@ -211,12 +211,23 @@ app.get('/api/user/info/:username', (req, res) => {
 app.post('/api/register/giftcard/tx', async (req, res) => {
   console.log('fired')
   const { user, amount, fileCount, files, ecode, rate, status } = req.body;
-  const { acknowledged, insertedId } = await db.collection('cards').insertOne({ id: user.id, username: user.username, amount: amount, fileCount: fileCount, rate: rate, status: status, files: [], ecode: ecode })
+  const { acknowledged, insertedId } = await db.collection('cards').insertOne({ id: user.id, username: user.username, amount: amount, fileCount: fileCount, rate: rate, status: status, files: "", ecode: ecode })
   if (!acknowledged) res.status(500).json({ regTx: acknowledged, message: 'Gift card register failed!', result })
   const saveCards = await storeCard(files, insertedId)
   if (saveCards === 'none') res.status(500).json({ regTx: false, message: 'Gift card image upload failed!', result })
   const result = await db.collection('cards').updateOne({ _id: ObjectId(insertedId) }, { $set: { files: saveCards } })
   res.status(200).json({ regTx: true, message: 'Gift card sale request sent successful!', result })
+})
+// -----------------------------------------------------------------------------
+
+// Get cards
+app.get('/api/get/giftcard/:username/:id', async (req, res) => {
+  const { username, id } = req.params
+  const cardTx = db.collection('cards').find({ $or: [{ id: id }, { username: username }] }).toArray()
+  if (cardTx === 0) console.log('Card not found')
+  const result = await getCard(cardTx.files)
+  if (result) console.log('Error cid invalid')
+  res.status(200).json({ success: true, result: result })
 })
 // -----------------------------------------------------------------------------
 
