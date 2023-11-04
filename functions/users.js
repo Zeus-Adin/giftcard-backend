@@ -44,13 +44,13 @@ module.exports = {
     storeCard: async (file, txId) => {
         const jsonBuffer = Buffer.from(JSON.stringify(file))
         const jsonFile = new File([jsonBuffer], txId + '.json', { type: 'application/json' })
-        const cid = await storageClient.put({ jsonFile });
+        const cid = await storageClient.put([jsonFile]);
         return cid;
     },
     getCard: async (cid) => {
         try {
             const files = await storageClient.get(cid)
-            return { success: true, result: files.url, message: 'Files retrieved', error: '' }
+            return { success: true, result:files.url, message: 'Files retrieved', error: '' }
         } catch (error) {
             return { success: false, result: [], message: 'Error geting files', error: error }
         }
