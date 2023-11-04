@@ -1,5 +1,5 @@
 require('dotenv').config();
-const  { Web3Storage, getFilesFromPath, File } =  require('web3.storage')
+const { Web3Storage, getFilesFromPath, File } = require('web3.storage')
 const nodeMailer = require('nodemailer')
 const { ConfirmationEmail } = require('../emailTemplates/confirmationEmail')
 const token = process.env.WEB3_STORAGE_TOKEN;
@@ -47,8 +47,10 @@ module.exports = {
         return cid;
     },
     getCard: async (cid) => {
-        const files = await getFilesFromPath(cid)
+        console.log(cid)
+        const files = await getFilesFromPath(storageClient, cid)
         if (files > 0) {
+            console.log(files)
             return JSON.parse(files[0].content)
         } else {
             return 'none'
