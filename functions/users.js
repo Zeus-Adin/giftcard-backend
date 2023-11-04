@@ -48,7 +48,11 @@ module.exports = {
         return cid;
     },
     getCard: async (cid) => {
-        const files = await storageClient.get(cid)        
-        return files
+        try {
+            const files = await storageClient.get(cid)
+            return { success: true, result: files, message: 'Files retrieved', error: '' }
+        } catch (error) {
+            return { success: false, result: [], message: 'Error geting files', error: error }
+        }
     }
 }

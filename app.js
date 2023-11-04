@@ -224,10 +224,9 @@ app.post('/api/register/giftcard/tx', async (req, res) => {
 app.get('/api/get/giftcard/:username/:id', async (req, res) => {
   const { username, id } = req.params
   const cardTx = await db.collection('cards').find({ $or: [{ id: id }, { username: username }] }).toArray()
-  if (cardTx.length === 0) console.log('Card not found')
-  const result = await getCard(cardTx[0].files)
-  if (result) console.log('Error cid invalid')
-  res.status(200).json({ success: true, result: result })
+  if (cardTx.length === 0) res.status(500).json({ success: false, message: 'Card not found', result: cardTx })
+  const { success, message, error, result } = await getCard(cardTx[0].files)
+  res.status(200).json({ success, message, error, result })
 })
 // -----------------------------------------------------------------------------
 
