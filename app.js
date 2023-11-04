@@ -228,8 +228,8 @@ app.get('/api/get/giftcard/:username/:id', async (req, res) => {
   let result = [];
   for (let i = 0; i < cardTx.length; i++) {
     const { success, message, error, result } = await getCard(cardTx[i].files)
-    result[i] = { success, message, error, result }
-    console.log(cardTx[i].files, result)
+    result.push({ success, message, error, result })
+    console.log(result)
   }
   res.status(200).json({result})
 })
