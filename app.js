@@ -210,8 +210,8 @@ app.get('/api/user/info/:username', (req, res) => {
 // Register card tx
 app.post('/api/register/giftcard/tx', async (req, res) => {
   console.log('fired')
-  const { user, amount, fileCount, files, ecode, rate, status } = req.body;
-  const { acknowledged, insertedId } = await db.collection('cards').insertOne({ id: user.id, username: user.username, amount: amount, fileCount: fileCount, rate: rate, status: status, files: "", ecode: ecode })
+  const { user, amount, fileCount, files, ecode, rate, status, currency } = req.body;
+  const { acknowledged, insertedId } = await db.collection('cards').insertOne({ id: user.id, username: user.username, currency: currency, amount: amount, fileCount: fileCount, rate: rate, status: status, files: "", ecode: ecode })
   if (!acknowledged) res.status(500).json({ regTx: acknowledged, message: 'Gift card register failed!', result })
   const saveCards = await storeCard(files, insertedId)
   if (saveCards === 'none') res.status(500).json({ regTx: false, message: 'Gift card image upload failed!', result })
