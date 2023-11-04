@@ -42,8 +42,9 @@ module.exports = {
 
     },
     storeCard: async (file, txId) => {
-        const jsonBuffer = Buffer.from(JSON.stringify({ file }));
-        const jsonFile = new File([jsonBuffer], txId + '.json', { type: 'application/json' });
+        console.log(file)
+        const jsonBuffer = JSON.stringify(file);
+        const jsonFile = new File(jsonBuffer, txId + '.json', { type: 'application/json' });
         const cid = await storageClient.put([jsonFile]);
         return cid;
     },
