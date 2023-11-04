@@ -51,7 +51,7 @@ module.exports = {
         if (files > 0) {
             return JSON.parse(files[0].content)
         } else {
-            return none
+            return 'none'
         }
     }
 }
