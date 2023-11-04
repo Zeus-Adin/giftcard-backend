@@ -50,6 +50,7 @@ module.exports = {
     getCard: async (cid) => {
         let jsonContent;
         const files = await storageClient.get(cid)
+        console.log(files)
         if (files) {
             jsonContent = JSON.parse(await files.text());
         }
