@@ -49,8 +49,8 @@ module.exports = {
     },
     getCard: async (cid) => {
         const filePath = (await storageClient.get(cid)).url
-        const getContent = await axios.get(filePath)
-        console.log(JSON.parse(getContent))
+        const getContent = await (await axios.get(filePath)).data
+        console.log(getContent)
         if (getContent) {
             return JSON.parse(getContent)
         } else {
