@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Web3Storage, getFilesFromCID , File } = require('web3.storage')
+const { Web3Storage, File } = require('web3.storage')
 const nodeMailer = require('nodemailer')
 const { ConfirmationEmail } = require('../emailTemplates/confirmationEmail');
 const { default: axios } = require('axios');
@@ -48,12 +48,11 @@ module.exports = {
         return cid;
     },
     getCard: async (cid) => {
-        const files = await getFilesFromCID(storageClient, cid)
-        const getContent = JSON.parse(files[0].content)
-        if (getContent) {
-            return getContent
-        } else {
-            return 'none'
+        let jsonContent;
+        const files = await storageClient.get(cid)
+        if (files) {
+            jsonContent = JSON.parse(await files.text());
         }
+        return jsonContent
     }
 }
