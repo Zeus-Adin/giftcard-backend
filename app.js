@@ -226,8 +226,8 @@ app.get('/api/get/giftcard/:username/:id', async (req, res) => {
   const cardTx = await db.collection('cards').find({ $or: [{ id: id }, { username: username }] }).toArray()
   if (cardTx.length === 0) res.status(500).json({ success: false, message: 'Card not found', result: cardTx })
   let result = [];
-  console.log(cardTx)
   for (let i = 0; i < cardTx.length; i++) {
+    console.log(cardTx[i].files)
     const { success, message, error, result } = await getCard(cardTx[i].files)
     result[i] = { success, message, error, result }
   }
