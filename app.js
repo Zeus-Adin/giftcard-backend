@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express')
 const { getDb, connectToDb } = require('./db')
-const { sendActivationEmail, registerUsersToken } = require('./functions/users')
+const { sendActivationEmail, registerUsersToken, storeCard } = require('./functions/users')
 const { ObjectId } = require('mongodb')
 const { default: axios } = require('axios')
 const cors = require('cors')
@@ -9,7 +9,7 @@ const cors = require('cors')
 
 // init app & middleware
 const app = express()
-app.use(express.json({ limit: '25mb' }))
+app.use(express.json({ limit: '10mb' }))
 app.use(cors({
   origin: [process.env.APP_ORIGIN, "https://giftcardshop247.netlify.app"]
 }))
@@ -19,7 +19,7 @@ let db
 connectToDb((err) => {
   if (!err) {
     app.listen(process.env.PORT, () => {
-      console.log('DB connected at port 3001')
+      console.log('DB connected at port ' + process.env.PORT)
     })
     db = getDb()
   }
@@ -208,10 +208,15 @@ app.get('/api/user/info/:username', (req, res) => {
 // ----------------------------------------------------------------------------
 
 // Register card tx
-app.post('/api/register/giftcard/tx', (req, res) => {
-  const { user, amount, fileCount, files, rate, status } = req.body;
-  console.log(user, amount, fileCount, files, rate, status)
-  console.log(req.body)
+app.post('/api/register/giftcard/tx', async (req, res) => {
+  console.log('fired')
+  // const { user, amount, fileCount, files, ecode, rate, status } = req.body;
+  // const { acknowledged, insertedId } = await db.collection('cards').insertOne({ id: user.id, username: user.username, amount: amount, fileCount: fileCount, rate: rate, status: status, files: [], ecode: ecode })
+  // if (!acknowledged) res.status(500).json({ regTx: acknowledged, message: 'Gift card register failed!', result })
+  // const saveCards = await storeCard(files, insertedId)
+  // if (saveCards === none) res.status(500).json({ regTx: false, message: 'Gift card image upload failed!', result })
+  // const result = await db.collection('cards').updateOne({ _id: ObjectId(insertedId) }, { $set: { files: saveCards } })
+  // res.status(200).json({ regTx: true, message: 'Gift card sale request sent successful!', result })
 })
 // -----------------------------------------------------------------------------
 

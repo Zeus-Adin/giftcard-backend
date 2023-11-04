@@ -1,6 +1,9 @@
+require('dotenv').config();
+const  { Web3Storage, getFilesFromPath, File } =  require('web3.storage')
 const nodeMailer = require('nodemailer')
-const crypto = require('crypto')
 const { ConfirmationEmail } = require('../emailTemplates/confirmationEmail')
+const token = process.env.WEB3_STORAGE_TOKEN;
+const storageClient = new Web3Storage({ token })
 
 module.exports = {
     registerUsersToken: async (db, usersRegId) => {
@@ -36,5 +39,19 @@ module.exports = {
         })
             .catch(e => console.log(e))
 
+    },
+    storeCard: async (file, txId) => {
+        const jsonBuffer = Buffer.from(JSON.stringify({ file }));
+        const jsonFile = new File([jsonBuffer], txId + '.json', { type: 'application/json' });
+        const cid = await storageClient.put([jsonFile]);
+        return cid;
+    },
+    getCard: async (cid) => {
+        const files = await getFilesFromPath(cid)
+        if (files > 0) {
+            return JSON.parse(files[0].content)
+        } else {
+            return none
+        }
     }
 }
