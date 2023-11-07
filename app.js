@@ -244,3 +244,28 @@ app.get('/api/get/giftcard/:cid', async (req, res) => {
 })
 // -----------------------------------------------------------------------------
 
+// Get Bank Info
+app.get('/api/get/bank/info/:id/:username', async (req, res) => {
+  const { id, username } = req.params;
+  const bankInfo = await db.collection('bank').find({ $and: [{ id: id }, { username: username }] }).toArray();
+  res.status(200).json({ accounts: bankInfo });
+})
+// -----------------------------------------------------------------------------
+
+// Register Bank
+app.post('/api/register/bank/info', async (req, res) => {
+  const info = req.body;
+  const bankInfo = await db.collection('bank').find({ $and: [{ id: info.id }, { username: info.username }] }).toArray();
+  for (let i = 0; i < bankInfo.length; i++) {
+    if (bankInfo[i].account_number === info.account_number) res.status(500).json({ bankReg: false, message: 'Account already exists!' });
+  }
+  if (bankInfo.length === 5) res.status(500).json({ bankReg: false, message: 'Allowed number of banks reached!' });
+  const { acknowledged } = await db.collection('bank').insertOne(info)
+  if (acknowledged) {
+    res.status(200).json({ bankReg: true, message: 'Bank add successfully!' });
+  } else {
+    res.status(500).json({ bankReg: false, message: 'Server error!' });
+  }
+})
+// -----------------------------------------------------------------------------
+
