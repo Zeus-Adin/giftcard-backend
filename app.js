@@ -37,8 +37,7 @@ app.post('/api/register/user/data/', (req, res) => {
       if (info.length === 0) {
         db.collection('users')
           .insertOne({
-            username: user_data.username, contact: user_data.contact,
-            firstname: "", lastname: "", contact: contact, bvn: "", email: user_data.email,
+            username: user_data.username, firstname: "", lastname: "", contact: user_data.contact, bvn: "", email: user_data.email,
             pwd: user_data.pwd, txpin: "", balance: 0.00,
             activationKey: "", activation: false, avatarIcon: "/svg/dashboard-avatar.svg",
           })
