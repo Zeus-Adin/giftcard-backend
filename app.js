@@ -46,15 +46,15 @@ app.post('/api/register/user/data/', async (req, res) => {
       avatarIcon: "/svg/dashboard-avatar.svg"
     }
     // Response
-    function returnResPayload(responseStat, reg_stat, reg_hash, message, reg_payload) {
-      res.status(responseStat).json({ reg_stat, reg_hash, message, reg_payload })
+    function returnResPayload(responseStat, act_key, reg_stat, reg_hash, message, reg_payload) {
+      res.status(responseStat).json({ reg_stat, act_key, reg_hash, message, reg_payload })
     }
 
     // Check if RegDetails Exists
     const verifyRegDetails = await db.collection('users').find({ $or: [{ username }, { contact }, { email }] }).toArray()
     if (verifyRegDetails.length > 0) {
       const { username: existUsername, contact: existContact, email: existEmail } = verifyRegDetails[0];
-      returnResPayload(500, false, "", "Registration failed!", { username: existUsername === username, contact: existContact === contact, email: existEmail === email })
+      returnResPayload(500, "", false, "", "Registration failed!", { username: existUsername === username, contact: existContact === contact, email: existEmail === email })
     }
 
     if (verifyRegDetails.length === 0) {
@@ -65,12 +65,12 @@ app.post('/api/register/user/data/', async (req, res) => {
         const { acknowledged: tokenRegStat } = await db.collection('users').updateOne({ _id: ObjectId(regId) }, { $set: { activationKey: activationKey.toString() } })
         if (tokenRegStat, tokenStat) {
           sendActivationEmail(username, token, `${process.env.APP_ORIGIN}/email-verification?actKey=${activationKey}&&email=${email}`, email)
-          returnResPayload(200, acknowledged, regId, "Registration successful!", { username: true, contact: true, email: true })
+          returnResPayload(200, activationKey, acknowledged, regId, "Registration successful!", { username: true, contact: true, email: true })
         } else {
-          returnResPayload(500, acknowledged, regId, "Token Generation Error!", { username: true, contact: true, email: true })
+          returnResPayload(500, activationKey, acknowledged, regId, "Token Generation Error!", { username: true, contact: true, email: true })
         }
       } else {
-        returnResPayload(500, acknowledged, regId, "Registration failed!", { username: false, contact: false, email: false })
+        returnResPayload(500, "", acknowledged, regId, "Registration failed!", { username: false, contact: false, email: false })
       }
     }
   } catch (error) {
