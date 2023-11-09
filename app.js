@@ -38,10 +38,9 @@ app.post('/api/register/user/data/', (req, res) => {
         db.collection('users')
           .insertOne({
             username: user_data.username, contact: user_data.contact,
-            email: user_data.email, pwd: user_data.pwd,
-            iconUrl: "/svg/dashboard-avatar.svg", balance: 0.00,
-            activationKey: "",
-            activation: false
+            firstname: "", lastname: "", contact: contact, bvn: "", email: user_data.email,
+            pwd: user_data.pwd, txpin: "", balance: 0.00,
+            activationKey: "", activation: false, avatarIcon: "/svg/dashboard-avatar.svg",
           })
           .then(async ({ insertedId: reg_ID }) => {
             const { result: { acknowledged, insertedId }, token } = await registerUsersToken(db, reg_ID)
