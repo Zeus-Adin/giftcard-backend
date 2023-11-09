@@ -30,6 +30,7 @@ connectToDb((err) => {
 app.post('/api/register/user/data/', async (req, res) => {
 
   const { username, contact, email, pwd } = req.body;
+  console.log(username, contact, email, pwd)
   const regPayload = {
     username: username,
     firstname: "",
