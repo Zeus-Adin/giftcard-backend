@@ -27,63 +27,52 @@ connectToDb((err) => {
 
 // Routes
 // verify user's info and register info
-app.post('/api/register/user/data/', (req, res) => {
+app.post('/api/register/user/data/', async (req, res) => {
 
-  const user_data = req.body
-  db.collection('users')
-    .find({ $or: [{ username: user_data.username }, { contact: user_data.contact }, { email: user_data.email }] })
-    .toArray()
-    .then(info => {
-      if (info.length === 0) {
-        db.collection('users')
-          .insertOne({
-            username: user_data.username, firstname: "", lastname: "", contact: user_data.contact, bvn: "", email: user_data.email,
-            pwd: user_data.pwd, txpin: "", balance: 0.00,
-            activationKey: "", activation: false, avatarIcon: "/svg/dashboard-avatar.svg",
-          })
-          .then(async ({ insertedId: reg_ID }) => {
-            const { result: { acknowledged, insertedId }, token } = await registerUsersToken(db, reg_ID)
-            const activationKey = insertedId
-            if (acknowledged) {
-              db.collection('users')
-                .updateOne({ _id: ObjectId(reg_ID) }, { $set: { activationKey: activationKey.toString() } })
-                .then(({ acknowledged }) => {
-                  sendActivationEmail(user_data.username, token, `${process.env.APP_ORIGIN}/email-verification?actKey=${activationKey}&&email=${user_data.email}`, user_data.email)
-                  res.status(200).json({
-                    reg_stat: acknowledged, reg_hash: reg_ID,
-                    act_key: insertedId, message: "Registration successful!",
-                    reg_payload: {
-                      username: false,
-                      contact: false,
-                      email: false
-                    }
-                  })
-                })
-            } else {
-              res.status(500).json({ reg_stat: acknowledged })
-            }
-          })
-          .catch(err => {
-            console.log(err)
-            res.status(500).json({ reg_stat: false, error: err, message: 'Token generation server side error!' })
-          })
+  const { username, contact, email, pwd } = req.body;
+  const regPayload = {
+    username: username,
+    firstname: "",
+    lastname: "",
+    contact: contact,
+    bvn: "",
+    email: email,
+    pwd: pwd,
+    txpin: "",
+    balance: 0.00,
+    activationKey: "",
+    activation: false,
+    avatarIcon: "/svg/dashboard-avatar.svg"
+  }
+
+  // Response
+  function returnResPayload(responseStat, reg_stat, reg_hash, message, reg_payload) {
+    res.status(responseStat).json({ reg_stat, reg_hash, message, reg_payload })
+  }
+
+  // Check if RegDetails Exists
+  const verifyRegDetails = await db.collection('users').find({ $or: [{ username }, { contact }, { email }] }).toArray()
+  if (verifyRegDetails > 0) {
+    const { username: existUsername, contact: existContact, email: existEmail } = verifyRegDetails[0];
+    returnResPayload(500, false, "", "Registration failed!", { username: existUsername === username, contact: existContact === contact, email: existEmail === email })
+  }
+
+  if (verifyRegDetails === 0) {
+    const { insertedId: regId, acknowledged } = await db.collection('users').insertOne(regPayload)
+    if (acknowledged) {
+      const { result: { acknowledged: tokenStat, insertedId: tokenRegId }, token } = await registerUsersToken(db, regId)
+      const activationKey = tokenRegId
+      const { acknowledged: tokenRegStat } = await db.collection('users').updateOne({ _id: ObjectId(regId) }, { $set: { activationKey: activationKey.toString() } })
+      if (tokenRegStat, tokenStat) {
+        sendActivationEmail(username, token, `${process.env.APP_ORIGIN}/email-verification?actKey=${activationKey}&&email=${email}`, email)
+        returnResPayload(200, acknowledged, regId, "Registration successful!", { username: true, contact: true, email: true })
       } else {
-        res.status(500).json({
-          reg_stat: false, reg_hash: "",
-          act_key: "", message: "Registration failed!",
-          reg_payload: {
-            username: info[0].username === user_data.username ? true : false,
-            contact: info[0].contact === user_data.contact ? true : false,
-            email: info[0].email === user_data.email ? true : false
-          }
-        })
+        returnResPayload(500, acknowledged, regId, "Token Generation Error!", { username: true, contact: true, email: true })
       }
-    })
-    .catch((error) => {
-      console.log(error)
-      res.status(500).json({ reg_stat: false, error: error, message: 'User registeration server side error!' })
-    })
-
+    } else {
+      returnResPayload(500, acknowledged, regId, "Registration failed!", { username: false, contact: false, email: false })
+    }
+  }
 })
 // ----------------------------------------------------------------------------
 
