@@ -260,3 +260,10 @@ app.post('/api/register/bank/info', async (req, res) => {
 })
 // -----------------------------------------------------------------------------
 
+// Create Pin
+app.post('/api/create/pin', async (req, res) => {
+  const { userId, username, txpin } = req.body;
+  const bankInfo = await db.collection('users').updateOne({ $and: [{ _id: userId }, { username: username }] }, { $set: { txpin: txpin } });
+  console.log(bankInfo)
+})
+// -----------------------------------------------------------------------------
