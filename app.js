@@ -262,8 +262,14 @@ app.post('/api/register/bank/info', async (req, res) => {
 
 // Create Pin
 app.post('/api/create/pin', async (req, res) => {
-  const { userId, username, txpin } = req.body;
-  const bankInfo = await db.collection('users').updateOne({ $and: [{ _id: userId }, { username: username }] }, { $set: { txpin: txpin } });
-  console.log(bankInfo)
+  const { userId, username, txpin } = req.body
+  const userData = await db.collection().find({ $and: [{ _id: ObjectId(userId) }, { username: username }] }).toArray();
+  if (userData.length === 0) res.status(500).json({ txStat: false, message: 'User not registered!' });
+  const { acknowledged } = await db.collection('users').updateOne({ $and: [{ _id: ObjectId(userId) }, { username: username }] }, { $set: { txpin: txpin } })
+  if (acknowledged) {
+    res.status(200).json({ txStat: true, message: 'Pin created successfully!', userData: userData[0] });
+  } else {
+    res.status(500).json({ txStat: false, message: 'Server error!' });
+  }
 })
 // -----------------------------------------------------------------------------
