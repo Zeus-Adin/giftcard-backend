@@ -273,3 +273,35 @@ app.post('/api/create/pin', async (req, res) => {
   }
 })
 // -----------------------------------------------------------------------------
+
+// Update Pin
+app.post('/api/update/pin', async (req, res) => {
+  const { userId, username, txpin, newTxpin } = req.body
+  const userData = await db.collection('users').find({ $and: [{ _id: ObjectId(userId) }, { username: username }] }).toArray();
+  if (userData.length === 0) res.status(500).json({ txStat: false, message: 'User not registered!', userInfo: userData });
+  if (userData[0].txpin !== txpin) res.status(500).json({ txStat: false, message: 'Wrong txpin!' });
+  const { acknowledged } = await db.collection('users').updateOne({ $and: [{ _id: ObjectId(userId) }, { username: username }] }, { $set: { txpin: newTxpin } })
+  if (acknowledged) {
+    res.status(200).json({ txUpdateStat: true, message: 'Pin updated successfully!', userInfo: userData[0] });
+  } else {
+    res.status(500).json({ txUpdateStat: false, message: 'Server error!' });
+  }
+})
+// -----------------------------------------------------------------------------
+
+// Balance withdraw
+app.post('/api/balance/withdraw', async (req, res) => {
+  const { userId, username, txpin, amount } = req.body
+  const userData = await db.collection('users').find({ $and: [{ _id: ObjectId(userId) }, { username: username }] }).toArray();
+  if (userData.length === 0) res.status(500).json({ withdrawStat: false, message: 'User not registered!' });
+  if (userData[0].txpin !== txpin) res.status(500).json({ withdrawStat: false, message: 'Wrong txpin!' });
+  if (userData[0].balance < amount) res.status(500).json({ withdrawStat: false, message: 'Insufficient balance!' });
+  const newBalance = userData[0].balance - amount;
+  const { acknowledged } = await db.collection('users').updateOne({ $and: [{ _id: ObjectId(userId) }, { username: username }] }, { $set: { balance: newBalance } })
+  if (acknowledged) {
+    res.status(200).json({ withdrawStat: true, message: 'Withdrawal request successful!', userInfo: userData[0] });
+  } else {
+    res.status(500).json({ withdrawStat: false, message: 'Server error!' });
+  }
+})
+// -----------------------------------------------------------------------------
