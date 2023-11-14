@@ -310,10 +310,9 @@ app.post('/api/balance/withdraw', async (req, res) => {
 // -----------------------------------------------------------------------------
 
 // Balance withdraw
-app.get('/api/orders', async (req, res) => {
-  const { userId, username } = req.body
-  console.log(req.body)
-  let orders = await db.collection('orders').find({ $and: [{ _id: ObjectId(userId) }, { username: username }] }).toArray();
-  res.status(200).json({ orders: orders[0] });
+app.get('/api/orders/:userId/:username', async (req, res) => {
+  const { userId, username } = req.params
+  let orders = await db.collection('orders').find({ $and: [{ userId: userId }, { username: username }] }).toArray();
+  res.status(200).json(orders);
 })
 // -----------------------------------------------------------------------------
