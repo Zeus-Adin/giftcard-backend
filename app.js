@@ -1,13 +1,15 @@
 require('dotenv').config();
 const express = require('express')
 const { getDb, connectToDb } = require('./db')
-const { sendActivationEmail, registerUsersToken, storeCard, getCard } = require('./functions/users')
+const {
+  userRegistration, activateUser, resendUserActivationToken, login, getUserInfo
+} = require('./functions/users')
 const { ObjectId } = require('mongodb')
-const { default: axios } = require('axios')
-const cors = require('cors')
+const cors = require('cors');
+const { saveCardTx, getCardTx } = require('./functions/cardTx');
 
-const date = new Date();
-
+let date = new Date();
+date = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
 // init app & middleware
 const app = express()
 app.use(express.json({ limit: '10mb' }))
@@ -29,141 +31,27 @@ connectToDb((err) => {
 // Routes
 // verify user's info and register info
 app.post('/api/register/user/data/', async (req, res) => {
-
-  const { username, contact, email, pwd } = req.body;
-  try {
-    const regPayload = {
-      username: username,
-      firstname: "",
-      lastname: "",
-      contact: contact,
-      bvn: "",
-      email: email,
-      pwd: pwd,
-      txpin: "",
-      balance: 0.00,
-      activationKey: "",
-      activation: false,
-      avatarIcon: "/svg/dashboard-avatar.svg"
-    }
-    // Response
-    function returnResPayload(responseStat, act_key, reg_stat, reg_hash, message, reg_payload) {
-      res.status(responseStat).json({ reg_stat, act_key, reg_hash, message, reg_payload })
-    }
-
-    // Check if RegDetails Exists
-    const verifyRegDetails = await db.collection('users').find({ $or: [{ username }, { contact }, { email }] }).toArray()
-    if (verifyRegDetails.length > 0) {
-      const { username: existUsername, contact: existContact, email: existEmail } = verifyRegDetails[0];
-      returnResPayload(500, "", false, "", "Registration failed!", { username: existUsername === username, contact: existContact === contact, email: existEmail === email })
-    }
-
-    if (verifyRegDetails.length === 0) {
-      const { insertedId: regId, acknowledged } = await db.collection('users').insertOne(regPayload)
-      if (acknowledged) {
-        const { result: { acknowledged: tokenStat, insertedId: tokenRegId }, token } = await registerUsersToken(db, regId)
-        const activationKey = tokenRegId
-        const { acknowledged: tokenRegStat } = await db.collection('users').updateOne({ _id: ObjectId(regId) }, { $set: { activationKey: activationKey.toString() } })
-        if (tokenRegStat, tokenStat) {
-          sendActivationEmail(username, token, `${process.env.APP_ORIGIN}/email-verification?actKey=${activationKey}&&email=${email}`, email)
-          returnResPayload(200, activationKey, acknowledged, regId, "Registration successful!", { username: true, contact: true, email: true })
-        } else {
-          returnResPayload(500, activationKey, acknowledged, regId, "Token Generation Error!", { username: true, contact: true, email: true })
-        }
-      } else {
-        returnResPayload(500, "", acknowledged, regId, "Registration failed!", { username: false, contact: false, email: false })
-      }
-    }
-  } catch (error) {
-    console.log(error)
-  }
-
+  userRegistration(req.body, db, res)
 })
 // ----------------------------------------------------------------------------
 
 // activate user
-app.post('/api/activate/user/:id', (req, res) => {
-
-  const { token: usersToken } = req.body;
-  db.collection('verification')
-    .find({ _id: ObjectId(req.params.id) })
-    .toArray()
-    .then(async result => {
-      if (result.length === 0) res.status(500).json({ verify_stat: false, message: 'Activation token expired!' })
-
-      const { token, reg_id } = result[0]
-      if (token === usersToken) {
-        const { acknowledged } = await db.collection('users').updateOne({ _id: ObjectId(reg_id) }, { $set: { activation: true, activationKey: '' } })
-        if (acknowledged) {
-          db.collection('verification').deleteOne({ _id: ObjectId(req.params.id) })
-          res.status(200).json({ verify_stat: true, message: 'Account activation successful!' })
-        }
-        if (!acknowledged) res.status(500).json({ verify_stat: false, message: 'Unknown error occured!' })
-      } else {
-        res.status(500).json({ verify_stat: false, message: 'Invalid token provided!' })
-      }
-    }).catch(error => res.status(500).json({ verify_stat: false, message: 'Db server side error!', error: error }))
+app.post('/api/activate/user', (req, res) => {
+  activateUser(req.body, db, res)
 })
-
 // ----------------------------------------------------------------------------
 
 // resend activation token
 app.post('/api/resend/token/', (req, res) => {
-  const { email } = req.body
-  db.collection('users').find({ email: email })
-    .toArray()
-    .then(async userInfo => {
-      if (!userInfo) {
-        return res.status(404).json({ resend_stat: false, message: "User not found!" });
-      }
-
-      const { _id: users_reg_id, activation, activationKey, email, username } = userInfo[0];
-      const verificationInfo = await db.collection('verification').findOne({ _id: activationKey });
-
-      if (!verificationInfo) {
-        const { result: { acknowledged, insertedId }, token } = await registerUsersToken(db, users_reg_id);
-
-        if (!acknowledged) {
-          return res.status(500).json({ resend_stat: false, message: 'Unknown error occurred' });
-        }
-
-        await db.collection('users').updateOne({ _id: ObjectId(users_reg_id) }, { $set: { activationKey: insertedId } });
-        sendActivationEmail(username, token, `${process.env.APP_ORIGIN}/email-verification?actKey=${insertedId}&&email=${email}`, email);
-        return res.status(200).json({ resend_stat: true, message: 'Verification code sent' });
-      }
-
-      const { token } = verificationInfo;
-
-      if (activation) {
-        return res.status(500).json({ resend_stat: false, message: 'Account has been activated already' });
-      }
-
-      sendActivationEmail(username, token, `${process.env.APP_ORIGIN}/email-verification?actKey=${activationKey}&&email=${email}`, email);
-      return res.status(200).json({ resend_stat: true, message: 'Verification code sent' });
-    })
-    .catch(error => {
-      res.status(500).json({ resend_stat: false, message: 'Server side error', error: error });
-    })
+  resendUserActivationToken(req.body, db, res)
+  console.log('Fired again')
 });
 
 // ----------------------------------------------------------------------------
 
 // user's login
 app.post('/api/user/login', (req, res) => {
-  const { email, pwd } = req.body
-  console.log(email, pwd)
-  db.collection('users')
-    .find({ email: email, pwd: pwd })
-    .toArray()
-    .then(result => {
-      if (result.length > 0) {
-        res.status(200).json({ authstate: true, result: result, message: 'Login successfull' })
-      } else {
-        res.status(500).json({ authstate: false, result: result, message: 'Incorrect user or password.' })
-      }
-    }).catch(error => {
-      res.status(500).json({ authstate: false, result: [], message: 'Unknown error occured', error: error })
-    })
+  login(req.body, db, res)
 })
 // ----------------------------------------------------------------------------
 
@@ -185,44 +73,19 @@ app.post('/api/user/forgot-pwd', (req, res) => {
 
 // Get user info
 app.get('/api/user/info/:username', (req, res) => {
-  const { username } = req.params
-  db.collection('users')
-    .find({ username: username })
-    .toArray()
-    .then(result => {
-      res.status(200).json({ result: result })
-    })
-    .catch(err => {
-      res.status(500).json({ error: err })
-    })
-
+  getUserInfo(req.params, db, res)
 })
 // ----------------------------------------------------------------------------
 
 // Register card tx
 app.post('/api/register/giftcard/tx', async (req, res) => {
-  console.log('fired')
-  const { user, amount, fileCount, files, ecode, rate, status, currency } = req.body;
-  const { acknowledged, insertedId } = await db.collection('cards').insertOne({ id: user.id, username: user.username, currency: currency, amount: amount, fileCount: fileCount, rate: rate, status: status, files: "", ecode: ecode })
-  if (!acknowledged) res.status(500).json({ regTx: acknowledged, message: 'Gift card register failed!', result })
-  const saveCards = await storeCard(files, insertedId)
-  if (saveCards === 'none') res.status(500).json({ regTx: false, message: 'Gift card image upload failed!', result })
-  const result = await db.collection('cards').updateOne({ _id: ObjectId(insertedId) }, { $set: { files: saveCards } })
-  res.status(200).json({ regTx: true, message: 'Gift card sale request sent successful!', result })
+  saveCardTx(req.body, db, res)
 })
 // -----------------------------------------------------------------------------
 
 // Get cards
 app.get('/api/get/giftcard/:username/:id', async (req, res) => {
-  const { username, id } = req.params
-  const cardTx = await db.collection('cards').find({ $or: [{ id: id }, { username: username }] }).toArray()
-  if (cardTx.length === 0) res.status(500).json({ success: false, message: 'Card not found', result: cardTx })
-  let results = [];
-  for (let i = 0; i < cardTx.length; i++) {
-    const { success, message, error, result } = await getCard(cardTx[i].files)
-    results.push({ success, message, error, url: result, tx: cardTx[i] })
-  }
-  res.status(200).json({ results })
+  getCardTx(req.params, db, res)
 })
 // -----------------------------------------------------------------------------
 

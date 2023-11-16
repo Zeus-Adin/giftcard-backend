@@ -1,58 +1,158 @@
 require('dotenv').config();
-const { Web3Storage, File } = require('web3.storage')
-const nodeMailer = require('nodemailer')
-const { ConfirmationEmail } = require('../emailTemplates/confirmationEmail');
-const { default: axios } = require('axios');
-const token = process.env.WEB3_STORAGE_TOKEN;
-const storageClient = new Web3Storage({ token })
+const { ObjectId } = require('mongodb')
+const { sendActivationEmail } = require('./emailHandlers')
+// Response
+function returnResPayload(responseStat, act_key, reg_stat, reg_hash, message, reg_payload, res) {
+    res.status(responseStat).json({ reg_stat, act_key, reg_hash, message, reg_payload })
+}
+
+async function registerUsersToken(db, usersRegId) {
+    const randomNum = Math.floor(Math.random() * 1000000);
+    const cryptoGraphicToken = randomNum.toString().padStart(6, '0');
+    const timestamp = new Date()
+    const token = { token: cryptoGraphicToken, reg_id: usersRegId, createdAt: timestamp }
+    const result = await db.collection('verification').insertOne(token)
+    return { result: result, token: cryptoGraphicToken, stamp: timestamp }
+}
 
 module.exports = {
-    registerUsersToken: async (db, usersRegId) => {
-        const randomNum = Math.floor(Math.random() * 1000000);
-        const cryptoGraphicToken = randomNum.toString().padStart(6, '0');
-        const timestamp = new Date()
-        const token = {
-            token: cryptoGraphicToken,
-            reg_id: usersRegId,
-            createdAt: timestamp,
-        }
-        const result = await db.collection('verification').insertOne(token)
-        return { result: result, token: cryptoGraphicToken, stamp: timestamp }
-    },
-    sendActivationEmail: async (username, token, activationurl, to) => {
-        const emailBody = ConfirmationEmail(username, token, activationurl, to)
-        const transporter = nodeMailer.createTransport({
-            host: 'mail.bitcoinpro24.com',
-            port: 465,
-            secure: true,
-            auth: {
-                user: 'team@bitcoinpro24.com',
-                pass: 'O*p@=i7kl-yE'
+
+    userRegistration: async (reqOptions, db, res) => {
+        const { username, contact, email, pwd } = reqOptions
+        try {
+            const regPayload = {
+                username: username, firstname: "", lastname: "", contact: contact, bvn: "", email: email,
+                pwd: pwd, txpin: "", balance: 0.00, activationKey: "", activation: false, avatarIcon: "/svg/dashboard-avatar.svg"
             }
-        })
-        transporter.sendMail({
-            from: 'team@bitcoinpro24.com',
-            to: to,
-            subject: 'Activation',
-            html: emailBody
-        }).then(res => {
-            console.log("Message sent: " + res.messageId)
-        })
-            .catch(e => console.log(e))
+
+            // Check if RegDetails Exists
+            const verifyRegDetails = await db.collection('users').find({ $or: [{ username }, { contact }, { email }] }).toArray()
+            if (verifyRegDetails.length > 0) {
+                const { username: existUsername, contact: existContact, email: existEmail } = verifyRegDetails[0];
+                returnResPayload(500, "", false, "", "Registration failed!", { username: existUsername === username, contact: existContact === contact, email: existEmail === email }, res)
+            }
+
+            if (verifyRegDetails.length === 0) {
+                const { insertedId: regId, acknowledged } = await db.collection('users').insertOne(regPayload)
+                if (acknowledged) {
+                    const { result: { acknowledged: tokenStat, insertedId: tokenRegId }, token } = await registerUsersToken(db, regId)
+                    const activationKey = tokenRegId
+                    const { acknowledged: tokenRegStat } = await db.collection('users').updateOne({ _id: ObjectId(regId) }, { $set: { activationKey: activationKey.toString() } })
+                    if (tokenRegStat, tokenStat) {
+                        sendActivationEmail(username, token, `${process.env.APP_ORIGIN}/email-verification?actKey=${activationKey}&&email=${email}`, email)
+                        returnResPayload(200, activationKey, acknowledged, regId, "Registration successful!", { username: true, contact: true, email: true }, res)
+                    } else {
+                        returnResPayload(500, activationKey, acknowledged, regId, "Token Generation Error!", { username: true, contact: true, email: true }, res)
+                    }
+                } else {
+                    returnResPayload(500, "", acknowledged, regId, "Registration failed!", { username: false, contact: false, email: false }, res)
+                }
+            }
+        } catch (error) {
+            returnResPayload(500, "", false, '', error.message, { username: false, contact: false, email: false }, res)
+        }
+    },
+    activateUser: async (reqOptions, db, res) => {
+        const { token: usersToken, id } = reqOptions
+        try {
+            const response = await db.collection('verification').find({ _id: ObjectId(id) }).toArray()
+            if (response.length === 0) res.status(500).json({ verify_stat: false, message: 'Activation token expired!' })
+
+            const { token, reg_id } = response[0]
+            if (token === usersToken) {
+                const { acknowledged } = await db.collection('users').updateOne({ _id: ObjectId(reg_id) }, { $set: { activation: true, activationKey: '' } })
+                if (acknowledged) {
+                    db.collection('verification').deleteOne({ _id: ObjectId(id) })
+                    res.status(200).json({ verify_stat: true, message: 'Account activation successful!' })
+                }
+                if (!acknowledged) res.status(500).json({ verify_stat: false, message: 'Unknown error occured!' })
+            } else {
+                res.status(500).json({ verify_stat: false, message: 'Invalid token provided!' })
+            }
+        } catch (error) {
+            console.log(error)
+            res.status(500).json({ verify_stat: false, message: error.message, error: error })
+        }
+    },
+    resendUserActivationToken: async (reqOptions, db, res) => {
+        const { email: regEmail } = reqOptions
+        try {
+            const userInfo = await db.collection('users').find({ email: regEmail }).toArray()
+            if (userInfo.length === 0) {
+                return res.status(500).json({ resend_stat: false, actKey: '', message: "User not found!" });
+            }
+            const { _id: users_reg_id, activation, activationKey, email, username } = userInfo[0];
+            const verificationInfo = await db.collection('verification').findOne({ _id: activationKey });
+
+            if (!verificationInfo) {
+                const { result: { acknowledged, insertedId }, token } = await registerUsersToken(db, users_reg_id);
+
+                if (!acknowledged) {
+                    return res.status(500).json({ resend_stat: false, actKey: '', message: 'Unknown error occurred' });
+                }
+
+                await db.collection('users').updateOne({ _id: ObjectId(users_reg_id) }, { $set: { activationKey: insertedId } });
+                sendActivationEmail(username, token, `${process.env.APP_ORIGIN}/email-verification?actKey=${insertedId}&&email=${email}`, email);
+                return res.status(200).json({ resend_stat: true, actKey: insertedId, message: 'Verification code sent' });
+            }
+
+            const { token, _id: actKey } = verificationInfo;
+
+            if (activation) {
+                return res.status(500).json({ resend_stat: false, actKey: '', message: 'Account has been activated already' });
+            }
+
+            sendActivationEmail(username, token, `${process.env.APP_ORIGIN}/email-verification?actKey=${activationKey}&&email=${email}`, email);
+            res.status(200).json({ resend_stat: true, message: 'Verification code sent', actKey });
+        } catch (error) {
+            res.status(500).json({ resend_stat: false, actKey: '', message: error.message, error: error });
+        }
 
     },
-    storeCard: async (file, txId) => {
-        const jsonBuffer = Buffer.from(JSON.stringify(file))
-        const jsonFile = new File([jsonBuffer], txId + '.json', { type: 'application/json' })
-        const cid = await storageClient.put([jsonFile]);
-        return cid;
-    },
-    getCard: async (cid) => {
+    login: async (reqOptions, db, res) => {
+        const { email, pwd:password } = reqOptions
         try {
-            const files = await storageClient.get(cid)
-            return { success: true, result:files.url, message: 'Files retrieved', error: '' }
+            let userInfo = await db.collection('users').find({ email: email, pwd: password }).toArray()
+            const { pwd, txpin, ...strippedUser } = userInfo[0];
+            if (userInfo.length > 0) {
+                res.status(200).json({ authstate: true, result: strippedUser, message: 'Login successfull' })
+            } else {
+                res.status(500).json({ authstate: false, result: strippedUser, message: 'Incorrect user or password.' })
+            }
         } catch (error) {
-            return { success: false, result: [], message: 'Error geting files', error: error }
+            res.status(500).json({ authstate: false, result: [], message: error.message, error: error })
+        }
+    },
+    resetPassword: async (reqOptions, db, res) => {
+        const { oldPwd, newPwd, username, email } = reqOptions
+        try {
+            const userData = await db.collection('users').find({ $and: [{ username }, { email }] }).toArray()
+
+            if (userData.length === 0) res.status(500).json({ pwd_reset: false, userData, message: "Pasword reset failed!" })
+
+            const { pwd, _id: userId } = userData[0]
+            if (pwd !== oldPwd) res.status(500).json({ pwd_reset: false, userData, message: "Incorrect password!" })
+            const { acknowledged } = await db.collection('users').updateOne({ _id: ObjectId(userId) }, { $set: { pwd: newPwd } })
+            if (acknowledged) {
+                res.status(200).json({ pwd_reset: acknowledged, userData, message: "Password reset successful!" })
+            } else {
+                res.status(500).json({ pwd_reset: false, userData, message: "Db error occured!" })
+            }
+        } catch (error) {
+            res.status(500).json({ pwd_reset: false, userData: [], message: error.message })
+        }
+    },
+    forgotPassword: async (reqOptions, db, res) => {
+
+    },
+    getUserInfo: async (reqOptions, db, res) => {
+        const { username } = reqOptions
+        try {
+            const userData = await db.collection('users').find({ username: username }).toArray()
+            const { pwd, txpin, ...strippedUser } = userData[0];
+            res.status(200).json({ message: 'Success', result: strippedUser })
+        } catch (err) {
+            res.status(500).json({ message: err.message, result: [], error: err })
         }
     }
 }
