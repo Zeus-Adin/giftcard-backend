@@ -123,7 +123,6 @@ module.exports = {
 
     },
     login: async (reqOptions, db, res) => {
-        console.log(reqOptions)
         const { email, pwd: password } = reqOptions
         try {
             let userInfo = await db.collection('users').find({ email: email, pwd: password }).toArray()
