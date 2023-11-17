@@ -10,14 +10,21 @@ module.exports = {
             const payload = { userId, userName, currency, amount, rate, files: '', ecode, fileCount, cardType, action, status: 'pending', timeStamp: date }
 
             const userValid = await db.collection('users').find({ $and: [{ _id: Object(userId) }, { username: userName }] }).toArray()
-            if (userValid.lenght === 0) res.status(500).json({ regTx: false, message: 'Wrong user details!', result: {} })
+            if (userValid.lenght === 0) {
+                res.status(500).json({ regTx: false, message: 'Wrong user details!', result: {} })
+                return
+            }
 
             const { acknowledged, insertedId } = await db.collection('cards').insertOne(payload)
-            if (!acknowledged) res.status(500).json({ regTx: acknowledged, message: 'Gift card register failed!', result: {} })
+            if (!acknowledged) {
+                res.status(500).json({ regTx: acknowledged, message: 'Gift card register failed!', result: {} })
+                return
+            }
             const saveCards = await storeCard(files, insertedId)
             if (saveCards === 'none') {
                 db.collection('cards').delete({ _id: ObjectId(insertedId) })
                 res.status(500).json({ regCardTx: false, message: 'Gift card image upload failed, changes reverted!', result: {} })
+                return
             }
 
             const result = await db.collection('cards').updateOne({ _id: ObjectId(insertedId) }, { $set: { files: saveCards } })
@@ -29,7 +36,10 @@ module.exports = {
     getCardTx: async (reqOptions, db, res) => {
         const { username, id } = reqOptions
         const cardTx = await db.collection('cards').find({ $and: [{ userId: id }, { userName: username }] }).toArray()
-        if (cardTx.length === 0) res.status(500).json({ success: false, message: 'Card not found', result: cardTx })
+        if (cardTx.length === 0) {
+            res.status(500).json({ success: false, message: 'Card not found', result: cardTx })
+            return
+        }
         let results = [];
         for (let i = 0; i < cardTx.length; i++) {
             const { success, message, error, result } = await getCard(cardTx[i].files)
