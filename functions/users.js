@@ -123,14 +123,15 @@ module.exports = {
 
     },
     login: async (reqOptions, db, res) => {
+        console.log(reqOptions)
         const { email, pwd: password } = reqOptions
         try {
             let userInfo = await db.collection('users').find({ email: email, pwd: password }).toArray()
-            const { pwd, txpin, ...strippedUser } = userInfo[0];
             if (userInfo.length > 0) {
+                const { pwd, txpin, ...strippedUser } = userInfo[0];
                 res.status(200).json({ authstate: true, result: strippedUser, message: 'Login successfull' })
             } else {
-                res.status(500).json({ authstate: false, result: strippedUser, message: 'Incorrect user or password.' })
+                res.status(500).json({ authstate: false, result: [], message: 'Incorrect user or password.' })
             }
         } catch (error) {
             res.status(500).json({ authstate: false, result: [], message: error.message, error: error })
