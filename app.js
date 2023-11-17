@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express')
 const { getDb, connectToDb } = require('./db')
 const {
-  userRegistration, activateUser, resendUserActivationToken, login, getUserInfo
+  userRegistration, activateUser, resendUserActivationToken, login, getUserInfo, userBalanceWithdrawal, getUsersOrder
 } = require('./functions/users')
 const { ObjectId } = require('mongodb')
 const cors = require('cors');
@@ -155,27 +155,12 @@ app.post('/api/update/pin', async (req, res) => {
 
 // Balance withdraw
 app.post('/api/balance/withdraw', async (req, res) => {
-  const { userId, username, txpin, amount } = req.body
-  let userData = await db.collection('users').find({ $and: [{ _id: ObjectId(userId) }, { username: username }] }).toArray();
-  if (userData.length === 0) res.status(500).json({ withdrawStat: false, message: 'User not registered!' });
-  if (userData[0].txpin !== txpin) res.status(500).json({ withdrawStat: false, message: 'Wrong txpin!' });
-  if (userData[0].balance < amount) res.status(500).json({ withdrawStat: false, message: 'Insufficient balance!' });
-  const newBalance = userData[0].balance - amount;
-  const { acknowledged } = await db.collection('users').updateOne({ $and: [{ _id: ObjectId(userId) }, { username: username }] }, { $set: { balance: newBalance } })
-  userData = await db.collection('users').find({ $and: [{ _id: ObjectId(userId) }, { username: username }] }).toArray();
-  if (acknowledged) {
-    await db.collection('orders').insertOne({ userId, username, amount, action: 'withdraw', status: 'pending', timeStammp: date });
-    res.status(200).json({ withdrawStat: true, message: 'Withdrawal request successful!', userInfo: userData[0] });
-  } else {
-    res.status(500).json({ withdrawStat: false, message: 'Server error!' });
-  }
+  userBalanceWithdrawal(req.body, db, res)
 })
 // -----------------------------------------------------------------------------
 
 // Balance withdraw
 app.get('/api/orders/:userId/:username', async (req, res) => {
-  const { userId, username } = req.params
-  let orders = await db.collection('orders').find({ $and: [{ userId: userId }, { username: username }] }).toArray();
-  res.status(200).json(orders);
+  getUsersOrder(req.params, db, res)
 })
 // -----------------------------------------------------------------------------

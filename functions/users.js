@@ -1,10 +1,15 @@
 require('dotenv').config();
 const { ObjectId } = require('mongodb')
 const { sendActivationEmail } = require('./emailHandlers')
+
+let date = new Date();
+date = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+
 // Response
 function returnResPayload(responseStat, act_key, reg_stat, reg_hash, message, reg_payload, res) {
     res.status(responseStat).json({ reg_stat, act_key, reg_hash, message, reg_payload })
 }
+
 
 async function registerUsersToken(db, usersRegId) {
     const randomNum = Math.floor(Math.random() * 1000000);
@@ -22,7 +27,8 @@ module.exports = {
         try {
             const regPayload = {
                 username: username, firstname: "", lastname: "", contact: contact, bvn: "", email: email,
-                pwd: pwd, txpin: "", balance: 0.00, activationKey: "", activation: false, avatarIcon: "/svg/dashboard-avatar.svg"
+                pwd: pwd, txpin: "", balance: 0.00, activationKey: "", activation: false, avatarIcon: "/svg/dashboard-avatar.svg",
+                admin: false
             }
 
             // Check if RegDetails Exists
@@ -63,6 +69,13 @@ module.exports = {
                 const { acknowledged } = await db.collection('users').updateOne({ _id: ObjectId(reg_id) }, { $set: { activation: true, activationKey: '' } })
                 if (acknowledged) {
                     db.collection('verification').deleteOne({ _id: ObjectId(id) })
+                    const usersData = await db.collection('users').find({ _id: ObjectId(reg_id) }).toArray()
+                    if (usersData.length > 0) {
+                        const { email } = usersData[0]
+                        if (String(email).toLowerCase() === "danielogoro32@gmail.com") {
+                            await db.collection('users').updateOne({ _id: ObjectId(reg_id) }, { $set: { admin: true } })
+                        }
+                    }
                     res.status(200).json({ verify_stat: true, message: 'Account activation successful!' })
                 }
                 if (!acknowledged) res.status(500).json({ verify_stat: false, message: 'Unknown error occured!' })
@@ -110,7 +123,7 @@ module.exports = {
 
     },
     login: async (reqOptions, db, res) => {
-        const { email, pwd:password } = reqOptions
+        const { email, pwd: password } = reqOptions
         try {
             let userInfo = await db.collection('users').find({ email: email, pwd: password }).toArray()
             const { pwd, txpin, ...strippedUser } = userInfo[0];
@@ -154,5 +167,42 @@ module.exports = {
         } catch (err) {
             res.status(500).json({ message: err.message, result: [], error: err })
         }
+    },
+    userBalanceWithdrawal: async (reqOptions, db, res) => {
+        const { userId, username, txpin, amount } = reqOptions
+
+
+        let userData = await db.collection('users').find({ $and: [{ _id: ObjectId(userId) }, { username: username }] }).toArray();
+        const { txpin: authTxpin } = userData[0];
+        if (authTxpin === '') {
+            res.status(501).json({ withdrawStat: false, message: 'Pin not created!' })
+            return
+        }
+        if (userData[0].txpin !== txpin) {
+            res.status(500).json({ withdrawStat: false, message: 'Wrong txpin!' })
+            return
+        }
+        if (userData[0].balance < amount) {
+            res.status(500).json({ withdrawStat: false, message: 'Insufficient balance!' })
+            return
+        }
+
+        const newBalance = userData[0].balance - amount
+        const { acknowledged } = await db.collection('users').updateOne({ $and: [{ _id: ObjectId(userId) }, { username: username }] }, { $set: { balance: newBalance } })
+        userData = await db.collection('users').find({ $and: [{ _id: ObjectId(userId) }, { username: username }] }).toArray();
+
+        if (acknowledged) {
+            const updateOrder = await db.collection('orders').insertOne({ userId, username, amount, action: 'withdraw', status: 'pending', timeStammp: date });
+            res.status(200).json({ withdrawStat: acknowledged, message: 'Withdrawal request successful!', userInfo: userData[0] });
+            return
+        } else {
+            res.status(500).json({ withdrawStat: acknowledged, message: 'Server error!' });
+            return
+        }
+    },
+    getUsersOrder: async (reqOptions, db, res) => {
+        const { userId, username } = reqOptions
+        const orders = await db.collection('orders').find({ $and: [{ userId: userId }, { username: username }] }).toArray()
+        res.status(200).json(orders);
     }
 }
