@@ -7,6 +7,9 @@ const {
 const { ObjectId } = require('mongodb')
 const cors = require('cors');
 const { saveCardTx, getCardTx } = require('./functions/cardTx');
+const { adminGetAllUsers, adminGetAllCardtx, adminGetAllOrder, adminGetAllBank, adminUpdateRate } = require('./functions/admin');
+const { regUsersBankDetails } = require('./functions/bank');
+const { getAllRates } = require('./functions/rate');
 
 let date = new Date();
 date = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
@@ -109,18 +112,7 @@ app.get('/api/get/bank/info/:id/:username', async (req, res) => {
 
 // Register Bank
 app.post('/api/register/bank/info', async (req, res) => {
-  const info = req.body;
-  const bankInfo = await db.collection('bank').find({ $and: [{ id: info.id }, { username: info.username }] }).toArray();
-  for (let i = 0; i < bankInfo.length; i++) {
-    if (bankInfo[i].account_number === info.account_number) res.status(500).json({ bankReg: false, message: 'Account already exists!' });
-  }
-  if (bankInfo.length === 5) res.status(500).json({ bankReg: false, message: 'Allowed number of banks reached!' });
-  const { acknowledged } = await db.collection('bank').insertOne(info)
-  if (acknowledged) {
-    res.status(200).json({ bankReg: true, message: 'Bank add successfully!' });
-  } else {
-    res.status(500).json({ bankReg: false, message: 'Server error!' });
-  }
+  regUsersBankDetails(req.body, db, res)
 })
 // -----------------------------------------------------------------------------
 
@@ -162,5 +154,33 @@ app.post('/api/balance/withdraw', async (req, res) => {
 // Balance withdraw
 app.get('/api/orders/:userId/:username', async (req, res) => {
   getUsersOrder(req.params, db, res)
+})
+// -----------------------------------------------------------------------------
+
+
+// Adming routes
+app.post('/api/get/all/users', async (req, res) => {
+  adminGetAllUsers(req.body, db, res)
+})
+// -----------------------------------------------------------------------------
+app.post('/api/get/all/cardtx', async (req, res) => {
+  adminGetAllCardtx(req.body, db, res)
+})
+// -----------------------------------------------------------------------------
+app.post('/api/get/all/orders', async (req, res) => {
+  adminGetAllOrder(req.body, db, res)
+})
+// -----------------------------------------------------------------------------
+app.post('/api/get/all/banks', async (req, res) => {
+  adminGetAllBank(req.body, db, res)
+})
+// -----------------------------------------------------------------------------
+app.post('/api/update/rates', async (req, res) => {
+  adminUpdateRate(req.body, db, res)
+  console.log('fired')
+})
+// -----------------------------------------------------------------------------
+app.get('/api/get/rates', async (req, res) => {
+  getAllRates(db, res)
 })
 // -----------------------------------------------------------------------------
