@@ -103,6 +103,76 @@ module.exports = {
 
     },
     adminUpdateBalance: async (reqOptions, db, res) => {
+        const { adminId, adminUsername, userId, username, amount } = reqOptions
+        try {
+            const adminData = await db.collection('users').findOne({ _id: ObjectId(adminId), username: adminUsername });
 
+            if (!adminData) {
+                return res.status(500).json({ authState: false, message: 'User not found!' });
+            }
+
+            const { admin, activation } = adminData;
+            if (!(admin && activation)) {
+                return res.status(500).json({ authState: false, message: 'Unauthorized user!' });
+            }
+
+            const { acknowledged } = await db.collection('users').updateOne({ _id: ObjectId(userId), username: username }, { $set: { balance: parseFloat(amount) } })
+            if (acknowledged) {
+                return res.status(200).json({ balanceUpdateState: acknowledged, message: 'Users balance has been updated to ' + amount })
+            }
+            res.status(200).json({ balanceUpdateState: false, message: 'This action failed, with an unknown error relating to db ' })
+        } catch (error) {
+            return res.status(200).json({ balanceUpdateState: false, message: error.message })
+        }
+    },
+    adminUpdateCardData: async (reqOptions, db, res) => {
+        const { adminId, adminUsername, cardTxRef, username, status, confirmedFileCount, reason } = reqOptions
+        try {
+            const adminData = await db.collection('users').findOne({ _id: ObjectId(adminId), username: adminUsername });
+
+            if (!adminData) {
+                return res.status(500).json({ authState: false, message: 'User not found!' });
+            }
+
+            const { admin, activation } = adminData;
+            if (!(admin && activation)) {
+                return res.status(500).json({ authState: false, message: 'Unauthorized user!' });
+            }
+
+            const { acknowledged } = await db.collection('cards').updateOne({ _id: ObjectId(cardTxRef), userName: username }, { $set: { status: status, fileCount: confirmedFileCount, reason: reason } });
+            if (acknowledged) {
+                return res.status(200).json({ cardState: acknowledged, message: "CardTx update success!" })
+            } else {
+                return res.status(500).json({ cardState: acknowledged, message: "CardTx update failed!" })
+            }
+
+        } catch (error) {
+            return res.status(200).json({ cardState: acknowledged, message: error.message })
+        }
+    },
+    adminUpdateOder: async (reqOptions, db, res) => {
+        const { adminId, adminUsername, orderRef, username, status } = reqOptions
+        try {
+            const adminData = await db.collection('users').findOne({ _id: ObjectId(adminId), username: adminUsername });
+
+            if (!adminData) {
+                return res.status(500).json({ authState: false, message: 'User not found!' });
+            }
+
+            const { admin, activation } = adminData;
+            if (!(admin && activation)) {
+                return res.status(500).json({ authState: false, message: 'Unauthorized user!' });
+            }
+
+            const { acknowledged } = await db.collection('orders').updateOne({ _id: ObjectId(orderRef), userName: username }, { $set: { status: status } });
+            if (acknowledged) {
+                return res.status(200).json({ orderState: acknowledged, message: "Order status update success!" })
+            } else {
+                return res.status(500).json({ orderState: acknowledged, message: "Order status update failed!" })
+            }
+
+        } catch (error) {
+            return res.status(200).json({ orderState: acknowledged, message: error.message })
+        }
     }
 }

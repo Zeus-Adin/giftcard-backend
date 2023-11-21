@@ -7,7 +7,7 @@ module.exports = {
     saveCardTx: async (reqOptions, db, res) => {
         const { userId, userName, currency, amount, rate, files, ecode, fileCount, cardType, action } = reqOptions
         try {
-            const payload = { userId, userName, currency, amount, rate, files: '', ecode, fileCount, cardType, action, status: 'pending', timeStamp: date }
+            const payload = { userId, userName, currency, amount, rate, files: '', ecode, fileCount, cardType, action, status: 'pending', timeStamp: date, reason: '' }
 
             const userValid = await db.collection('users').find({ $and: [{ _id: Object(userId) }, { username: userName }] }).toArray()
             if (userValid.lenght === 0) {

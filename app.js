@@ -7,9 +7,10 @@ const {
 const { ObjectId } = require('mongodb')
 const cors = require('cors');
 const { saveCardTx, getCardTx } = require('./functions/cardTx');
-const { adminGetAllUsers, adminGetAllCardtx, adminGetAllOrder, adminGetAllBank, adminUpdateRate } = require('./functions/admin');
+const { adminGetAllUsers, adminGetAllCardtx, adminGetAllOrder, adminGetAllBank, adminUpdateRate, adminUpdateBalance, adminUpdateCardData } = require('./functions/admin');
 const { regUsersBankDetails } = require('./functions/bank');
 const { getAllRates } = require('./functions/rate');
+const { getCard } = require('./functions/cardTxImages');
 
 let date = new Date();
 date = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
@@ -145,6 +146,12 @@ app.post('/api/update/pin', async (req, res) => {
 })
 // -----------------------------------------------------------------------------
 
+// Get Rates
+app.get('/api/get/rates', async (req, res) => {
+  getAllRates(db, res)
+})
+// -----------------------------------------------------------------------------
+
 // Balance withdraw
 app.post('/api/balance/withdraw', async (req, res) => {
   userBalanceWithdrawal(req.body, db, res)
@@ -177,10 +184,13 @@ app.post('/api/get/all/banks', async (req, res) => {
 // -----------------------------------------------------------------------------
 app.post('/api/update/rates', async (req, res) => {
   adminUpdateRate(req.body, db, res)
-  console.log('fired')
 })
 // -----------------------------------------------------------------------------
-app.get('/api/get/rates', async (req, res) => {
-  getAllRates(db, res)
+app.post('/api/update/amount', async (req, res) => {
+  adminUpdateBalance(req.body, db, res)
+})
+// -----------------------------------------------------------------------------
+app.post('/api/update/cardtx/data', async (req, res) => {
+  adminUpdateCardData(req.body, db, res)
 })
 // -----------------------------------------------------------------------------
