@@ -164,7 +164,7 @@ module.exports = {
                 return res.status(500).json({ authState: false, message: 'Unauthorized user!' });
             }
 
-            const { acknowledged } = await db.collection('orders').updateOne({ _id: ObjectId(orderRef), userName: username }, { $set: { status: status } });
+            const { acknowledged } = await db.collection('orders').updateOne({ _id: ObjectId(orderRef), username }, { $set: { status: status } });
             if (acknowledged) {
                 return res.status(200).json({ orderState: acknowledged, message: "Order status update success!" })
             } else {

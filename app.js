@@ -7,7 +7,7 @@ const {
 const { ObjectId } = require('mongodb')
 const cors = require('cors');
 const { saveCardTx, getCardTx } = require('./functions/cardTx');
-const { adminGetAllUsers, adminGetAllCardtx, adminGetAllOrder, adminGetAllBank, adminUpdateRate, adminUpdateBalance, adminUpdateCardData } = require('./functions/admin');
+const { adminGetAllUsers, adminGetAllCardtx, adminGetAllOrder, adminGetAllBank, adminUpdateRate, adminUpdateBalance, adminUpdateCardData, adminUpdateOder } = require('./functions/admin');
 const { regUsersBankDetails } = require('./functions/bank');
 const { getAllRates } = require('./functions/rate');
 const { getCard } = require('./functions/cardTxImages');
@@ -192,5 +192,9 @@ app.post('/api/update/amount', async (req, res) => {
 // -----------------------------------------------------------------------------
 app.post('/api/update/cardtx/data', async (req, res) => {
   adminUpdateCardData(req.body, db, res)
+})
+// -----------------------------------------------------------------------------
+app.post('/api/update/order/status', async (req, res) => {
+  adminUpdateOder(req.body, db, res)
 })
 // -----------------------------------------------------------------------------
