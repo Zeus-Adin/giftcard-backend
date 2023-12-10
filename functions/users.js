@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { ObjectId } = require('mongodb')
-const { sendActivationEmail } = require('./emailHandlers')
+const { sendActivationEmail } = require('./emailHandlers');
+const e = require('express');
 
 let date = new Date();
 date = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
@@ -158,6 +159,30 @@ module.exports = {
     forgotPassword: async (reqOptions, db, res) => {
 
     },
+    updatePassword: async (reqOptions, db, res) => {
+        const { userId, username, oldPassword, newPassword } = reqOptions
+        try {
+            const userData = await db.collection('users').find({ _id: userId, username, pwd: oldPassword }).toArray()
+            if (newPassword === '' || newPassword.length < 8) {
+                res.status(500).json({ update_pwd: false, message: "Password policy violation!" })
+                return
+            }
+            if (userData.length === 0) {
+                res.status(500).json({ update_pwd: false, message: "Incorrect password!" })
+                return
+            }
+            const { acknowledged } = await db.collection('users').updateOne({ _id: ObjectId(userId), username }, { $set: { pwd: newPassword } })
+            if (acknowledged) {
+                res.status(200).json({ update_pwd: acknowledged, message: "Password update successful!" })
+                return
+            } else {
+                res.status(500).json({ update_pwd: acknowledged, message: "Db error occured!" })
+                return
+            }
+        } catch (error) {
+            res.status(500).json({ update_pwd: false, message: error.message })
+        }
+    },
     getUserInfo: async (reqOptions, db, res) => {
         const { username } = reqOptions
         try {
@@ -204,5 +229,29 @@ module.exports = {
         const { userId, username } = reqOptions
         const orders = await db.collection('orders').find({ $and: [{ userId: userId }, { username: username }] }).toArray()
         res.status(200).json(orders);
+    },
+    getUsersPin: async (reqOptions, db, res) => {
+        const { userId, username } = reqOptions
+        console.log(reqOptions)
+        try {
+            const { txpin } = await db.collection('users').findOne({ _id: ObjectId(userId), username })
+            return res.status(200).json({ success: true, pin: txpin })
+        } catch (error) {
+            return res.status(200).json({ success: false, pin: '' })
+        }
+
+    },
+    updateUsersTxPin: async (reqOptions, db, res) => {
+        try {
+            const { userId, username, old_txpin, new_txpin } = reqOptions;
+            const { acknowledged, modifiedCount } = await db.collection('users').updateOne({ _id: ObjectId(userId), username, txpin: old_txpin }, { $set: { txpin: new_txpin } })
+            if (acknowledged && modifiedCount > 0) {
+                return res.status(200).json({ updatePinState: acknowledged, message: 'Your transaction pin has been updated successfully!' })
+            } else {
+                return res.status(200).json({ updatePinState: acknowledged, message: 'Error occcured, your transaction pin was not updated!' })
+            }
+        } catch (err) {
+            return res.status(200).json({ updatePinState: false, message: err.message })
+        }
     }
 }

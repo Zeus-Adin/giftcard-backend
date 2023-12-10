@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express')
 const { getDb, connectToDb } = require('./db')
 const {
-  userRegistration, activateUser, resendUserActivationToken, login, getUserInfo, userBalanceWithdrawal, getUsersOrder
+  userRegistration, activateUser, resendUserActivationToken, login, getUserInfo, userBalanceWithdrawal, getUsersOrder, getUsersPin, updateUsersTxPin, resetPassword, updatePassword
 } = require('./functions/users')
 const { ObjectId } = require('mongodb')
 const cors = require('cors');
@@ -161,6 +161,24 @@ app.post('/api/balance/withdraw', async (req, res) => {
 // Balance withdraw
 app.get('/api/orders/:userId/:username', async (req, res) => {
   getUsersOrder(req.params, db, res)
+})
+// -----------------------------------------------------------------------------
+
+// getUsers txpin
+app.post('/api/get/txpin', async (req, res) => {
+  getUsersPin(req.body, db, res)
+})
+// -----------------------------------------------------------------------------
+
+// Update txpin
+app.post('/api/update/txpin', async (req, res) => {
+  updateUsersTxPin(req.body, db, res)
+})
+// -----------------------------------------------------------------------------
+
+// Update password
+app.post('/api/update/password', async (req, res) => {
+  updatePassword(req.body, db, res)
 })
 // -----------------------------------------------------------------------------
 
