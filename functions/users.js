@@ -162,7 +162,7 @@ module.exports = {
     updatePassword: async (reqOptions, db, res) => {
         const { userId, username, oldPassword, newPassword } = reqOptions
         try {
-            const userData = await db.collection('users').find({ _id: userId, username, pwd: oldPassword }).toArray()
+            const userData = await db.collection('users').find({ _id: ObjectId(userId), username, pwd: oldPassword }).toArray()
             if (newPassword === '' || newPassword.length < 8) {
                 res.status(500).json({ update_pwd: false, message: "Password policy violation!" })
                 return
